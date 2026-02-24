@@ -14,7 +14,170 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      chat_history: {
+        Row: {
+          created_at: string
+          id: string
+          message: string
+          role: string
+          sentiment: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          message: string
+          role: string
+          sentiment?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          message?: string
+          role?: string
+          sentiment?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      goals: {
+        Row: {
+          created_at: string
+          duration_weeks: number
+          id: string
+          level: string
+          skill: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          duration_weeks?: number
+          id?: string
+          level?: string
+          skill: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          duration_weeks?: number
+          id?: string
+          level?: string
+          skill?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          display_name: string | null
+          id: string
+          language: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          display_name?: string | null
+          id?: string
+          language?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          display_name?: string | null
+          id?: string
+          language?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      progress: {
+        Row: {
+          completed_tasks: number
+          id: string
+          streak: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          completed_tasks?: number
+          id?: string
+          streak?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          completed_tasks?: number
+          id?: string
+          streak?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      roadmaps: {
+        Row: {
+          content: Json
+          created_at: string
+          goal_id: string
+          id: string
+        }
+        Insert: {
+          content?: Json
+          created_at?: string
+          goal_id: string
+          id?: string
+        }
+        Update: {
+          content?: Json
+          created_at?: string
+          goal_id?: string
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "roadmaps_goal_id_fkey"
+            columns: ["goal_id"]
+            isOneToOne: false
+            referencedRelation: "goals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      schedules: {
+        Row: {
+          created_at: string
+          id: string
+          status: string
+          task: string
+          task_date: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          status?: string
+          task: string
+          task_date?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          status?: string
+          task?: string
+          task_date?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
