@@ -18,40 +18,52 @@ export default function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 glass-strong">
-      <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
-        <Link to="/dashboard" className="flex items-center gap-2 group">
-          <Brain className="w-7 h-7 text-primary group-hover:drop-shadow-[0_0_8px_hsl(var(--primary)/0.6)] transition-all" />
-          <span className="font-display font-bold text-lg gradient-text">NeuroPlan AI</span>
+    <nav className="fixed top-0 left-0 right-0 z-50 glass-strong border-b border-border/50">
+      <div className="max-w-7xl mx-auto px-4 md:px-6 h-16 flex items-center justify-between">
+        <Link to="/dashboard" className="flex items-center gap-2.5 group">
+          <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
+            <Brain className="w-5 h-5 text-primary" />
+          </div>
+          <span className="font-display font-bold text-lg text-foreground">NeuroPlan</span>
         </Link>
 
         {/* Desktop nav */}
         <div className="hidden md:flex items-center gap-1">
-          {NAV_ITEMS.map(({ path, icon: Icon, label }) => (
-            <Link
-              key={path}
-              to={path}
-              className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-all ${
-                location.pathname === path
-                  ? "bg-primary/10 text-primary neon-glow"
-                  : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
-              }`}
-            >
-              <Icon className="w-4 h-4" />
-              {label}
-            </Link>
-          ))}
+          {NAV_ITEMS.map(({ path, icon: Icon, label }) => {
+            const active = location.pathname === path;
+            return (
+              <Link
+                key={path}
+                to={path}
+                className={`relative flex items-center gap-2 px-4 py-2 rounded-lg text-sm transition-all ${
+                  active
+                    ? "text-primary"
+                    : "text-muted-foreground hover:text-foreground hover:bg-muted/30"
+                }`}
+              >
+                <Icon className="w-4 h-4" />
+                {label}
+                {active && (
+                  <motion.div
+                    layoutId="nav-indicator"
+                    className="absolute inset-0 bg-primary/10 rounded-lg -z-10"
+                    transition={{ type: "spring", duration: 0.5, bounce: 0.2 }}
+                  />
+                )}
+              </Link>
+            );
+          })}
           <button
             onClick={() => { signOut(); navigate("/"); }}
-            className="ml-2 flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all"
+            className="ml-3 flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all"
           >
             <LogOut className="w-4 h-4" />
           </button>
         </div>
 
         {/* Mobile toggle */}
-        <button className="md:hidden text-foreground" onClick={() => setMobileOpen(!mobileOpen)}>
-          {mobileOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+        <button className="md:hidden text-foreground p-2 rounded-lg hover:bg-muted/30 transition-colors" onClick={() => setMobileOpen(!mobileOpen)}>
+          {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
         </button>
       </div>
 
@@ -62,18 +74,18 @@ export default function Navbar() {
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
-            className="md:hidden glass-strong border-t border-border overflow-hidden"
+            className="md:hidden glass-strong border-t border-border/50 overflow-hidden"
           >
-            <div className="p-4 space-y-1">
+            <div className="p-3 space-y-1">
               {NAV_ITEMS.map(({ path, icon: Icon, label }) => (
                 <Link
                   key={path}
                   to={path}
                   onClick={() => setMobileOpen(false)}
-                  className={`flex items-center gap-3 px-3 py-3 rounded-lg text-sm transition-all ${
+                  className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm transition-all ${
                     location.pathname === path
                       ? "bg-primary/10 text-primary"
-                      : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                      : "text-muted-foreground hover:text-foreground hover:bg-muted/30"
                   }`}
                 >
                   <Icon className="w-5 h-5" />
@@ -82,10 +94,10 @@ export default function Navbar() {
               ))}
               <button
                 onClick={() => { signOut(); navigate("/"); setMobileOpen(false); }}
-                className="flex items-center gap-3 px-3 py-3 rounded-lg text-sm text-muted-foreground hover:text-destructive w-full"
+                className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-muted-foreground hover:text-destructive w-full"
               >
                 <LogOut className="w-5 h-5" />
-                Đăng xuất / Logout
+                Đăng xuất
               </button>
             </div>
           </motion.div>
