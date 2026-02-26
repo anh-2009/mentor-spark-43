@@ -198,7 +198,10 @@ export type Database = {
       schedules: {
         Row: {
           created_at: string
+          goal_id: string | null
           id: string
+          notes: string | null
+          sort_order: number
           status: string
           task: string
           task_date: string
@@ -206,7 +209,10 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          goal_id?: string | null
           id?: string
+          notes?: string | null
+          sort_order?: number
           status?: string
           task: string
           task_date?: string
@@ -214,13 +220,24 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          goal_id?: string | null
           id?: string
+          notes?: string | null
+          sort_order?: number
           status?: string
           task?: string
           task_date?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "schedules_goal_id_fkey"
+            columns: ["goal_id"]
+            isOneToOne: false
+            referencedRelation: "goals"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {

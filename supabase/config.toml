@@ -2,3 +2,6 @@ project_id = "sqkfzsnfrpnlxcsiqfqg"
 
 [functions.chat]
 verify_jwt = false
+
+[functions.generate-roadmap]
+verify_jwt = false
