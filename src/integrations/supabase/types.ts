@@ -16,6 +16,7 @@ export type Database = {
     Tables: {
       chat_history: {
         Row: {
+          conversation_id: string | null
           created_at: string
           id: string
           message: string
@@ -24,6 +25,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          conversation_id?: string | null
           created_at?: string
           id?: string
           message: string
@@ -32,11 +34,53 @@ export type Database = {
           user_id: string
         }
         Update: {
+          conversation_id?: string | null
           created_at?: string
           id?: string
           message?: string
           role?: string
           sentiment?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_history_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      conversations: {
+        Row: {
+          conversation_type: string
+          created_at: string
+          id: string
+          pinned: boolean
+          skill: string | null
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          conversation_type?: string
+          created_at?: string
+          id?: string
+          pinned?: boolean
+          skill?: string | null
+          title?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          conversation_type?: string
+          created_at?: string
+          id?: string
+          pinned?: boolean
+          skill?: string | null
+          title?: string
+          updated_at?: string
           user_id?: string
         }
         Relationships: []
