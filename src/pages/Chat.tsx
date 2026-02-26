@@ -11,12 +11,11 @@ import ChatInput from "@/components/chat/ChatInput";
 import { useConversations } from "@/hooks/useConversations";
 import { toast } from "sonner";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { useState as useStateAlias } from "react";
 
 export default function Chat() {
   const { user, session } = useAuth();
   const isMobile = useIsMobile();
-  const [mobileSidebar, setMobileSidebar] = useStateAlias(false);
+  const [mobileSidebar, setMobileSidebar] = useState(false);
   const {
     conversations,
     activeId,
