@@ -17,6 +17,7 @@ import { useQueryClient } from "@tanstack/react-query";
 export default function Chat() {
   const { user, session } = useAuth();
   const isMobile = useIsMobile();
+  const queryClient = useQueryClient();
   const [mobileSidebar, setMobileSidebar] = useState(false);
   const {
     conversations,
