@@ -120,7 +120,10 @@ export default function Roadmap() {
   });
 
   const getRoadmapContent = (goal: any): RoadmapContent | null => {
-    const roadmap = goal.roadmaps?.[0];
+    const roadmaps = goal.roadmaps;
+    if (!roadmaps) return null;
+    // Handle both array and object (unique constraint makes it an object)
+    const roadmap = Array.isArray(roadmaps) ? roadmaps[0] : roadmaps;
     if (!roadmap?.content) return null;
     const c = roadmap.content;
     if (typeof c === "object" && c.milestones) return c as RoadmapContent;
