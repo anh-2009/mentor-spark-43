@@ -3,6 +3,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { streamChat, type Msg } from "@/lib/streamChat";
 import { detectSentiment } from "@/lib/sentiment";
+import { parseRoadmapIntent, executeRoadmapAction } from "@/lib/masterActions";
 import Navbar from "@/components/Navbar";
 import ChatSidebar from "@/components/chat/ChatSidebar";
 import ChatHeader from "@/components/chat/ChatHeader";
@@ -11,10 +12,12 @@ import ChatInput from "@/components/chat/ChatInput";
 import { useConversations } from "@/hooks/useConversations";
 import { toast } from "sonner";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useQueryClient } from "@tanstack/react-query";
 
 export default function Chat() {
   const { user, session } = useAuth();
   const isMobile = useIsMobile();
+  const queryClient = useQueryClient();
   const [mobileSidebar, setMobileSidebar] = useState(false);
   const {
     conversations,
@@ -60,6 +63,45 @@ export default function Chat() {
     setIsLoading(true);
 
     const sentiment = detectSentiment(userMsg.content);
+    const isMasterChannel = activeConversation?.conversation_type === "master";
+
+    // Check for roadmap intent in master channel
+    if (isMasterChannel) {
+      const roadmapAction = parseRoadmapIntent(text);
+      if (roadmapAction && session) {
+        setMessages((prev) => [...prev, { role: "assistant", content: `⏳ Đang tạo roadmap **${roadmapAction.skill}** (${roadmapAction.level}, ${roadmapAction.weeks} tuần)...` }]);
+
+        const result = await executeRoadmapAction(roadmapAction, user!.id, session.access_token);
+
+        setMessages((prev) => {
+          const updated = [...prev];
+          updated[updated.length - 1] = {
+            role: "assistant",
+            content: result.success
+              ? `✅ Đã tạo roadmap **${roadmapAction.skill}** thành công!\n\n- 📚 Kỹ năng: **${roadmapAction.skill}**\n- 📊 Level: **${roadmapAction.level}**\n- 📅 Thời gian: **${roadmapAction.weeks} tuần**\n\n👉 Vào trang **Roadmap** để xem chi tiết milestones, KPIs và risk analysis.`
+              : `❌ Lỗi tạo roadmap: ${result.error}. Vui lòng thử lại.`
+          };
+          return updated;
+        });
+
+        if (result.success) {
+          toast.success(`Đã tạo roadmap ${roadmapAction.skill}!`);
+          queryClient.invalidateQueries({ queryKey: ["goals"] });
+        }
+
+        await supabase.from("chat_history").insert([
+          { user_id: user!.id, role: "user", message: userMsg.content, sentiment, conversation_id: activeId },
+          { user_id: user!.id, role: "assistant", message: result.success ? `Đã tạo roadmap ${roadmapAction.skill} thành công.` : `Lỗi: ${result.error}`, sentiment: "neutral", conversation_id: activeId },
+        ]);
+
+        if (messages.length === 0 && activeConversation?.title === "New Chat") {
+          renameConversation(activeId, text.slice(0, 40) + (text.length > 40 ? "..." : ""));
+        }
+
+        setIsLoading(false);
+        return;
+      }
+    }
 
     await supabase.from("chat_history").insert({
       user_id: user!.id,
@@ -70,7 +112,7 @@ export default function Chat() {
     });
 
     // Build system prompt based on conversation type
-    const isMaster = activeConversation?.conversation_type === "master";
+    const isMaster = isMasterChannel;
     const systemContext = isMaster
       ? "You are the Master Control AI for NeuroPlan. You can help create roadmaps, manage schedules, control prompts, and give strategic guidance. Respond in the user's language."
       : activeConversation?.skill
