@@ -189,7 +189,7 @@ export type Database = {
           {
             foreignKeyName: "roadmaps_goal_id_fkey"
             columns: ["goal_id"]
-            isOneToOne: false
+            isOneToOne: true
             referencedRelation: "goals"
             referencedColumns: ["id"]
           },

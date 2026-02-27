@@ -1,0 +1,1 @@
+ALTER TABLE public.roadmaps ADD CONSTRAINT roadmaps_goal_id_unique UNIQUE (goal_id);
