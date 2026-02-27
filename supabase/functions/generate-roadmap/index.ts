@@ -60,9 +60,8 @@ serve(async (req) => {
       { global: { headers: { Authorization: authHeader } } }
     );
 
-    const token = authHeader.replace("Bearer ", "");
-    const { data: claimsData, error: claimsError } = await supabase.auth.getClaims(token);
-    if (claimsError || !claimsData?.claims) {
+    const { data: { user: authUser }, error: userError } = await supabase.auth.getUser();
+    if (userError || !authUser) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -125,7 +124,7 @@ Generate a comprehensive roadmap with milestones, KPIs, resources, and risk anal
     }
 
     // Save to database
-    const userId = claimsData.claims.sub;
+    const userId = authUser.id;
     const { data: roadmap, error: dbError } = await supabase
       .from("roadmaps")
       .upsert(
