@@ -3,6 +3,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { streamChat, type Msg } from "@/lib/streamChat";
 import { detectSentiment } from "@/lib/sentiment";
+import { parseRoadmapIntent, executeRoadmapAction } from "@/lib/masterActions";
 import Navbar from "@/components/Navbar";
 import ChatSidebar from "@/components/chat/ChatSidebar";
 import ChatHeader from "@/components/chat/ChatHeader";
@@ -11,6 +12,7 @@ import ChatInput from "@/components/chat/ChatInput";
 import { useConversations } from "@/hooks/useConversations";
 import { toast } from "sonner";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useQueryClient } from "@tanstack/react-query";
 
 export default function Chat() {
   const { user, session } = useAuth();
