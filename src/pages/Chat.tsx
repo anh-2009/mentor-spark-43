@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { streamChat, type Msg } from "@/lib/streamChat";
 import { detectSentiment } from "@/lib/sentiment";
 import { parseRoadmapIntent, executeRoadmapAction } from "@/lib/masterActions";
+import { findRelevantPrompts, buildEnhancedSystemPrompt } from "@/lib/promptVault";
 import Navbar from "@/components/Navbar";
 import ChatSidebar from "@/components/chat/ChatSidebar";
 import ChatHeader from "@/components/chat/ChatHeader";
