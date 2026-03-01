@@ -145,6 +145,7 @@ export default function Chat() {
         messages: [...messages, userMsg],
         sentiment,
         token: session.access_token,
+        systemPrompt: systemContext,
         onDelta: upsertAssistant,
         onDone: async () => {
           setIsLoading(false);
