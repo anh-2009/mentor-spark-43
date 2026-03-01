@@ -114,11 +114,19 @@ export default function Chat() {
 
     // Build system prompt based on conversation type
     const isMaster = isMasterChannel;
-    const systemContext = isMaster
+    let systemContext = isMaster
       ? "You are the Master Control AI for NeuroPlan. You can help create roadmaps, manage schedules, control prompts, and give strategic guidance. Respond in the user's language."
       : activeConversation?.skill
       ? `You are an AI tutor specializing in "${activeConversation.skill}". Focus your responses on this skill area. Respond in the user's language.`
       : "You are NeuroPlan AI Mentor. Help with studying and learning. Respond in the user's language.";
+
+    // Auto-inject relevant vault prompts
+    try {
+      const vaultPrompts = await findRelevantPrompts(user!.id, text, activeConversation?.skill);
+      if (vaultPrompts.length > 0) {
+        systemContext = buildEnhancedSystemPrompt(systemContext, vaultPrompts);
+      }
+    } catch { /* vault injection is best-effort */ }
 
     let assistantSoFar = "";
     const upsertAssistant = (chunk: string) => {
