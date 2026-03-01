@@ -47,19 +47,21 @@ serve(async (req) => {
     }
 
     const userId = claimsData.claims.sub;
-    const { messages, sentiment } = await req.json();
+    const { messages, sentiment, systemPrompt } = await req.json();
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
 
-    // Enhance system prompt with sentiment
-    let enhancedPrompt = SYSTEM_PROMPT;
-    if (sentiment === "stressed") {
-      enhancedPrompt += "\n\nThe student is currently feeling stressed. Be extra supportive and encouraging. Help them breathe and break things down.";
-    } else if (sentiment === "overwhelmed") {
-      enhancedPrompt += "\n\nThe student feels overwhelmed. Focus on simplifying and prioritizing. Break everything into tiny steps.";
-    } else if (sentiment === "demotivated") {
-      enhancedPrompt += "\n\nThe student seems demotivated. Share inspiring perspectives and celebrate small wins.";
+    // Use custom system prompt if provided (includes vault injections), otherwise default
+    let enhancedPrompt = systemPrompt || SYSTEM_PROMPT;
+    if (!systemPrompt) {
+      if (sentiment === "stressed") {
+        enhancedPrompt += "\n\nThe student is currently feeling stressed. Be extra supportive and encouraging.";
+      } else if (sentiment === "overwhelmed") {
+        enhancedPrompt += "\n\nThe student feels overwhelmed. Focus on simplifying and prioritizing.";
+      } else if (sentiment === "demotivated") {
+        enhancedPrompt += "\n\nThe student seems demotivated. Share inspiring perspectives and celebrate small wins.";
+      }
     }
 
     // Only send last 5 messages for performance
