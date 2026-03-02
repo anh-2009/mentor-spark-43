@@ -3,7 +3,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { streamChat, type Msg } from "@/lib/streamChat";
 import { detectSentiment } from "@/lib/sentiment";
-import { parseRoadmapIntent, executeRoadmapAction, parseScheduleIntent, executeScheduleAction, parseProgressIntent, executeProgressAction, parseDeleteRoadmapIntent, executeDeleteRoadmapAction } from "@/lib/masterActions";
+import { parseRoadmapIntent, executeRoadmapAction, parseScheduleIntent, executeScheduleAction, parseProgressIntent, executeProgressAction, parseDeleteRoadmapIntent, executeDeleteRoadmapAction, parseListGoalsIntent, executeListGoalsAction } from "@/lib/masterActions";
 import { findRelevantPrompts, buildEnhancedSystemPrompt } from "@/lib/promptVault";
 import Navbar from "@/components/Navbar";
 import ChatSidebar from "@/components/chat/ChatSidebar";
