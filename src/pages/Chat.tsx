@@ -170,6 +170,35 @@ export default function Chat() {
         return;
       }
 
+      // Check for list goals intent
+      const listGoalsAction = parseListGoalsIntent(text);
+      if (listGoalsAction) {
+        setMessages((prev) => [...prev, { role: "assistant", content: `⏳ Đang tải danh sách goals...` }]);
+
+        const result = await executeListGoalsAction(user!.id);
+
+        setMessages((prev) => {
+          const updated = [...prev];
+          updated[updated.length - 1] = {
+            role: "assistant",
+            content: result.success ? result.summary! : `❌ ${result.error}`
+          };
+          return updated;
+        });
+
+        await supabase.from("chat_history").insert([
+          { user_id: user!.id, role: "user", message: userMsg.content, sentiment, conversation_id: activeId },
+          { user_id: user!.id, role: "assistant", message: result.success ? result.summary! : `Lỗi: ${result.error}`, sentiment: "neutral", conversation_id: activeId },
+        ]);
+
+        if (messages.length === 0 && activeConversation?.title === "New Chat") {
+          renameConversation(activeId, "Danh sách goals");
+        }
+
+        setIsLoading(false);
+        return;
+      }
+
       // Check for schedule intent
       const scheduleAction = parseScheduleIntent(text);
       if (scheduleAction) {
