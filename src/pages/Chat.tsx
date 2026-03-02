@@ -3,7 +3,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { streamChat, type Msg } from "@/lib/streamChat";
 import { detectSentiment } from "@/lib/sentiment";
-import { parseRoadmapIntent, executeRoadmapAction, parseScheduleIntent, executeScheduleAction, parseProgressIntent, executeProgressAction, parseDeleteRoadmapIntent, executeDeleteRoadmapAction } from "@/lib/masterActions";
+import { parseRoadmapIntent, executeRoadmapAction, parseScheduleIntent, executeScheduleAction, parseProgressIntent, executeProgressAction, parseDeleteRoadmapIntent, executeDeleteRoadmapAction, parseListGoalsIntent, executeListGoalsAction } from "@/lib/masterActions";
 import { findRelevantPrompts, buildEnhancedSystemPrompt } from "@/lib/promptVault";
 import Navbar from "@/components/Navbar";
 import ChatSidebar from "@/components/chat/ChatSidebar";
@@ -164,6 +164,35 @@ export default function Chat() {
 
         if (messages.length === 0 && activeConversation?.title === "New Chat") {
           renameConversation(activeId, text.slice(0, 40) + (text.length > 40 ? "..." : ""));
+        }
+
+        setIsLoading(false);
+        return;
+      }
+
+      // Check for list goals intent
+      const listGoalsAction = parseListGoalsIntent(text);
+      if (listGoalsAction) {
+        setMessages((prev) => [...prev, { role: "assistant", content: `⏳ Đang tải danh sách goals...` }]);
+
+        const result = await executeListGoalsAction(user!.id);
+
+        setMessages((prev) => {
+          const updated = [...prev];
+          updated[updated.length - 1] = {
+            role: "assistant",
+            content: result.success ? result.summary! : `❌ ${result.error}`
+          };
+          return updated;
+        });
+
+        await supabase.from("chat_history").insert([
+          { user_id: user!.id, role: "user", message: userMsg.content, sentiment, conversation_id: activeId },
+          { user_id: user!.id, role: "assistant", message: result.success ? result.summary! : `Lỗi: ${result.error}`, sentiment: "neutral", conversation_id: activeId },
+        ]);
+
+        if (messages.length === 0 && activeConversation?.title === "New Chat") {
+          renameConversation(activeId, "Danh sách goals");
         }
 
         setIsLoading(false);
