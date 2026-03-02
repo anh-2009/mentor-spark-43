@@ -3,7 +3,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { streamChat, type Msg } from "@/lib/streamChat";
 import { detectSentiment } from "@/lib/sentiment";
-import { parseRoadmapIntent, executeRoadmapAction, parseScheduleIntent, executeScheduleAction, parseProgressIntent, executeProgressAction } from "@/lib/masterActions";
+import { parseRoadmapIntent, executeRoadmapAction, parseScheduleIntent, executeScheduleAction, parseProgressIntent, executeProgressAction, parseDeleteRoadmapIntent, executeDeleteRoadmapAction } from "@/lib/masterActions";
 import { findRelevantPrompts, buildEnhancedSystemPrompt } from "@/lib/promptVault";
 import Navbar from "@/components/Navbar";
 import ChatSidebar from "@/components/chat/ChatSidebar";
@@ -127,6 +127,43 @@ export default function Chat() {
 
         if (messages.length === 0 && activeConversation?.title === "New Chat") {
           renameConversation(activeId, "Xem tiến độ học tập");
+        }
+
+        setIsLoading(false);
+        return;
+      }
+
+      // Check for delete roadmap intent
+      const deleteAction = parseDeleteRoadmapIntent(text);
+      if (deleteAction) {
+        setMessages((prev) => [...prev, { role: "assistant", content: `⏳ Đang xóa roadmap **${deleteAction.skill}** và dữ liệu liên quan...` }]);
+
+        const result = await executeDeleteRoadmapAction(deleteAction, user!.id);
+
+        setMessages((prev) => {
+          const updated = [...prev];
+          updated[updated.length - 1] = {
+            role: "assistant",
+            content: result.success
+              ? `✅ Đã xóa roadmap **${result.skill}** thành công!\n\n- 🗑️ Đã xóa goal, roadmap và lịch học liên quan.\n\n👉 Gõ **"tạo roadmap [skill] [tuần]"** để tạo lại.`
+              : `❌ ${result.error}`
+          };
+          return updated;
+        });
+
+        if (result.success) {
+          toast.success(`Đã xóa roadmap ${result.skill}!`);
+          queryClient.invalidateQueries({ queryKey: ["goals"] });
+          queryClient.invalidateQueries({ queryKey: ["schedules"] });
+        }
+
+        await supabase.from("chat_history").insert([
+          { user_id: user!.id, role: "user", message: userMsg.content, sentiment, conversation_id: activeId },
+          { user_id: user!.id, role: "assistant", message: result.success ? `Đã xóa roadmap ${result.skill}.` : `Lỗi: ${result.error}`, sentiment: "neutral", conversation_id: activeId },
+        ]);
+
+        if (messages.length === 0 && activeConversation?.title === "New Chat") {
+          renameConversation(activeId, text.slice(0, 40) + (text.length > 40 ? "..." : ""));
         }
 
         setIsLoading(false);
