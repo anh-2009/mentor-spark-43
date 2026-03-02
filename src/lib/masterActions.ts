@@ -53,6 +53,58 @@ const SCHEDULE_PATTERNS = [
   /(?:lịch học|schedule)\s+(.+)/i,
 ];
 
+export interface DeleteRoadmapAction {
+  type: "delete_roadmap";
+  skill: string;
+}
+
+const DELETE_ROADMAP_PATTERNS = [
+  /(?:xóa|xoá|delete|remove)\s+(?:roadmap|lộ trình|goal)\s+(.+)/i,
+  /(?:roadmap|lộ trình)\s+(.+?)\s+(?:xóa|xoá|delete|remove)/i,
+];
+
+export function parseDeleteRoadmapIntent(text: string): DeleteRoadmapAction | null {
+  for (const pattern of DELETE_ROADMAP_PATTERNS) {
+    const match = text.match(pattern);
+    if (match) {
+      const skill = match[1].trim().replace(/[.!?]+$/, "").trim();
+      if (skill) return { type: "delete_roadmap", skill };
+    }
+  }
+  return null;
+}
+
+export async function executeDeleteRoadmapAction(
+  action: DeleteRoadmapAction,
+  userId: string
+): Promise<{ success: boolean; skill?: string; error?: string }> {
+  try {
+    const { data: goals } = await supabase
+      .from("goals")
+      .select("id, skill")
+      .eq("user_id", userId)
+      .ilike("skill", `%${action.skill}%`);
+
+    if (!goals || goals.length === 0) {
+      return { success: false, error: `Không tìm thấy goal nào cho "${action.skill}".` };
+    }
+
+    const goalIds = goals.map((g) => g.id);
+
+    // Delete schedules, roadmaps, then goals (order matters for FK)
+    await supabase.from("schedules").delete().eq("user_id", userId).in("goal_id", goalIds);
+    for (const gid of goalIds) {
+      await supabase.from("roadmaps").delete().eq("goal_id", gid);
+    }
+    await supabase.from("goals").delete().eq("user_id", userId).in("id", goalIds);
+
+    const skillNames = goals.map((g) => g.skill).join(", ");
+    return { success: true, skill: skillNames };
+  } catch (e) {
+    return { success: false, error: e instanceof Error ? e.message : "Unknown error" };
+  }
+}
+
 export interface ProgressAction {
   type: "view_progress";
 }
