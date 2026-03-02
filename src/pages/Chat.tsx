@@ -3,7 +3,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { streamChat, type Msg } from "@/lib/streamChat";
 import { detectSentiment } from "@/lib/sentiment";
-import { parseRoadmapIntent, executeRoadmapAction } from "@/lib/masterActions";
+import { parseRoadmapIntent, executeRoadmapAction, parseScheduleIntent, executeScheduleAction } from "@/lib/masterActions";
 import { findRelevantPrompts, buildEnhancedSystemPrompt } from "@/lib/promptVault";
 import Navbar from "@/components/Navbar";
 import ChatSidebar from "@/components/chat/ChatSidebar";
@@ -68,6 +68,7 @@ export default function Chat() {
 
     // Check for roadmap intent in master channel
     if (isMasterChannel) {
+      // Check for roadmap intent
       const roadmapAction = parseRoadmapIntent(text);
       if (roadmapAction && session) {
         setMessages((prev) => [...prev, { role: "assistant", content: `⏳ Đang tạo roadmap **${roadmapAction.skill}** (${roadmapAction.level}, ${roadmapAction.weeks} tuần)...` }]);
@@ -93,6 +94,42 @@ export default function Chat() {
         await supabase.from("chat_history").insert([
           { user_id: user!.id, role: "user", message: userMsg.content, sentiment, conversation_id: activeId },
           { user_id: user!.id, role: "assistant", message: result.success ? `Đã tạo roadmap ${roadmapAction.skill} thành công.` : `Lỗi: ${result.error}`, sentiment: "neutral", conversation_id: activeId },
+        ]);
+
+        if (messages.length === 0 && activeConversation?.title === "New Chat") {
+          renameConversation(activeId, text.slice(0, 40) + (text.length > 40 ? "..." : ""));
+        }
+
+        setIsLoading(false);
+        return;
+      }
+
+      // Check for schedule intent
+      const scheduleAction = parseScheduleIntent(text);
+      if (scheduleAction) {
+        setMessages((prev) => [...prev, { role: "assistant", content: `⏳ Đang tạo lịch học từ roadmap **${scheduleAction.skill}**...` }]);
+
+        const result = await executeScheduleAction(scheduleAction, user!.id);
+
+        setMessages((prev) => {
+          const updated = [...prev];
+          updated[updated.length - 1] = {
+            role: "assistant",
+            content: result.success
+              ? `✅ Đã tạo lịch học **${scheduleAction.skill}** thành công!\n\n- 📋 Tổng số task: **${result.taskCount}**\n- 📅 Lịch được phân bổ theo milestones\n\n👉 Vào trang **Schedule** để xem và quản lý lịch học.`
+              : `❌ ${result.error}`
+          };
+          return updated;
+        });
+
+        if (result.success) {
+          toast.success(`Đã tạo ${result.taskCount} task cho lịch học ${scheduleAction.skill}!`);
+          queryClient.invalidateQueries({ queryKey: ["schedules"] });
+        }
+
+        await supabase.from("chat_history").insert([
+          { user_id: user!.id, role: "user", message: userMsg.content, sentiment, conversation_id: activeId },
+          { user_id: user!.id, role: "assistant", message: result.success ? `Đã tạo lịch học ${scheduleAction.skill} với ${result.taskCount} tasks.` : `Lỗi: ${result.error}`, sentiment: "neutral", conversation_id: activeId },
         ]);
 
         if (messages.length === 0 && activeConversation?.title === "New Chat") {
