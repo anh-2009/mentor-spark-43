@@ -6,12 +6,15 @@ import Navbar from "@/components/Navbar";
 import { motion, AnimatePresence, Reorder } from "framer-motion";
 import {
   CalendarDays, Plus, Loader2, CheckCircle2, Circle, Trash2,
-  ChevronLeft, ChevronRight, GripVertical, StickyNote, X
+  ChevronLeft, ChevronRight, GripVertical, StickyNote, X, BarChart3, PieChart as PieIcon
 } from "lucide-react";
 import { toast } from "sonner";
 import { format, addDays, startOfWeek, endOfWeek, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, addWeeks, addMonths, subDays, subWeeks, subMonths } from "date-fns";
+import BarAnalytics from "@/components/schedule/BarAnalytics";
+import PieAnalytics from "@/components/schedule/PieAnalytics";
 
 type ViewMode = "day" | "week" | "month";
+type TabMode = "schedule" | "analytics";
 
 interface TaskItem {
   id: string;
@@ -27,6 +30,7 @@ export default function Schedule() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [viewMode, setViewMode] = useState<ViewMode>("day");
+  const [tabMode, setTabMode] = useState<TabMode>("schedule");
   const [currentDate, setCurrentDate] = useState(new Date());
   const [newTask, setNewTask] = useState("");
   const [newTaskDate, setNewTaskDate] = useState(format(new Date(), "yyyy-MM-dd"));
