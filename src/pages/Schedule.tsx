@@ -55,6 +55,20 @@ export default function Schedule() {
     enabled: !!user,
   });
 
+  // All tasks for analytics
+  const { data: allTasks } = useQuery({
+    queryKey: ["schedules-all", user?.id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("schedules")
+        .select("*")
+        .eq("user_id", user!.id)
+        .order("created_at", { ascending: true });
+      return (data ?? []) as TaskItem[];
+    },
+    enabled: !!user && tabMode === "analytics",
+  });
+
   const addTask = useMutation({
     mutationFn: async () => {
       const maxOrder = tasks?.filter(t => t.task_date === newTaskDate).reduce((max, t) => Math.max(max, t.sort_order), -1) ?? -1;
