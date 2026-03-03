@@ -160,110 +160,145 @@ export default function Schedule() {
           </div>
         </div>
 
-        {/* View mode + navigation */}
-        <div className="glass-hover p-3 mb-4 flex items-center justify-between">
-          <div className="flex items-center gap-1">
-            {(["day", "week", "month"] as ViewMode[]).map(mode => (
-              <button
-                key={mode}
-                onClick={() => setViewMode(mode)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                  viewMode === mode ? "bg-primary/15 text-primary" : "text-muted-foreground hover:text-foreground hover:bg-muted/30"
-                }`}
-              >
-                {mode === "day" ? "Ngày" : mode === "week" ? "Tuần" : "Tháng"}
-              </button>
-            ))}
-          </div>
-          <div className="flex items-center gap-2">
-            <button onClick={() => navigate(-1)} className="p-1.5 rounded-lg hover:bg-muted/30 text-muted-foreground"><ChevronLeft className="w-4 h-4" /></button>
-            <button onClick={() => setCurrentDate(new Date())} className="px-3 py-1.5 rounded-lg text-xs font-medium text-primary hover:bg-primary/10 transition-colors">Hôm nay</button>
-            <button onClick={() => navigate(1)} className="p-1.5 rounded-lg hover:bg-muted/30 text-muted-foreground"><ChevronRight className="w-4 h-4" /></button>
-          </div>
-          <div className="text-sm font-medium text-foreground">
-            {viewMode === "day" && format(currentDate, "dd/MM/yyyy")}
-            {viewMode === "week" && `${format(startOfWeek(currentDate, { weekStartsOn: 1 }), "dd/MM")} – ${format(endOfWeek(currentDate, { weekStartsOn: 1 }), "dd/MM")}`}
-            {viewMode === "month" && format(currentDate, "MM/yyyy")}
-          </div>
-        </div>
-
-        {/* Progress */}
-        {totalCount > 0 && (
-          <div className="mb-4">
-            <div className="flex items-center justify-between mb-1">
-              <span className="text-xs text-muted-foreground">{doneCount}/{totalCount} hoàn thành</span>
-              <span className="text-xs text-primary font-medium">{Math.round((doneCount / totalCount) * 100)}%</span>
-            </div>
-            <div className="h-1.5 bg-muted rounded-full overflow-hidden">
-              <motion.div className="h-full bg-primary rounded-full" initial={{ width: 0 }} animate={{ width: `${(doneCount / totalCount) * 100}%` }} />
-            </div>
-          </div>
-        )}
-
-        {/* Add task */}
-        <div className="flex gap-2 mb-6">
-          {viewMode !== "day" && (
-            <input
-              type="date"
-              value={newTaskDate}
-              onChange={(e) => setNewTaskDate(e.target.value)}
-              className="px-3 py-3 rounded-xl bg-muted/50 border border-border text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
-            />
-          )}
-          <input
-            placeholder="Thêm task mới..."
-            value={newTask}
-            onChange={(e) => setNewTask(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && newTask) {
-                if (viewMode === "day") setNewTaskDate(format(currentDate, "yyyy-MM-dd"));
-                addTask.mutate();
-              }
-            }}
-            className="flex-1 px-4 py-3 rounded-xl bg-muted/50 border border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm"
-          />
+        {/* Tab switcher */}
+        <div className="flex items-center gap-2 mb-5">
           <button
-            onClick={() => {
-              if (viewMode === "day") setNewTaskDate(format(currentDate, "yyyy-MM-dd"));
-              if (newTask) addTask.mutate();
-            }}
-            disabled={!newTask || addTask.isPending}
-            className="px-4 py-3 rounded-xl bg-primary text-primary-foreground disabled:opacity-40 hover:opacity-90 transition-all"
+            onClick={() => setTabMode("schedule")}
+            className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium transition-all ${
+              tabMode === "schedule" ? "bg-primary/15 text-primary" : "text-muted-foreground hover:text-foreground hover:bg-muted/30"
+            }`}
           >
-            <Plus className="w-4 h-4" />
+            <CalendarDays className="w-4 h-4" />
+            Schedule
+          </button>
+          <button
+            onClick={() => setTabMode("analytics")}
+            className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium transition-all ${
+              tabMode === "analytics" ? "bg-secondary/15 text-secondary" : "text-muted-foreground hover:text-foreground hover:bg-muted/30"
+            }`}
+          >
+            <BarChart3 className="w-4 h-4" />
+            Analytics
           </button>
         </div>
 
-        {/* Content */}
-        {isLoading ? (
-          <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>
-        ) : viewMode === "day" ? (
-          <DayView
-            date={currentDate}
-            tasks={getTasksForDate(format(currentDate, "yyyy-MM-dd"))}
-            onToggle={(id, status) => toggleTask.mutate({ id, status })}
-            onDelete={(id) => deleteTask.mutate(id)}
-            onReorder={(items) => reorderTasks(format(currentDate, "yyyy-MM-dd"), items)}
-            editingNote={editingNote}
-            noteText={noteText}
-            onStartNote={(id, text) => { setEditingNote(id); setNoteText(text || ""); }}
-            onSaveNote={(id) => saveNote.mutate({ id, notes: noteText })}
-            onCancelNote={() => setEditingNote(null)}
-            onNoteChange={setNoteText}
-          />
-        ) : viewMode === "week" ? (
-          <WeekView
-            currentDate={currentDate}
-            getTasksForDate={getTasksForDate}
-            onToggle={(id, status) => toggleTask.mutate({ id, status })}
-            onDelete={(id) => deleteTask.mutate(id)}
-          />
+        {tabMode === "analytics" ? (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="grid grid-cols-1 md:grid-cols-2 gap-4"
+          >
+            <BarAnalytics tasks={allTasks ?? []} />
+            <PieAnalytics tasks={allTasks ?? []} />
+          </motion.div>
         ) : (
-          <MonthView
-            currentDate={currentDate}
-            getTasksForDate={getTasksForDate}
-            onSelectDay={(d) => { setCurrentDate(d); setViewMode("day"); }}
-          />
+          <>
+            {/* View mode + navigation */}
+            <div className="glass-hover p-3 mb-4 flex items-center justify-between">
+              <div className="flex items-center gap-1">
+                {(["day", "week", "month"] as ViewMode[]).map(mode => (
+                  <button
+                    key={mode}
+                    onClick={() => setViewMode(mode)}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                      viewMode === mode ? "bg-primary/15 text-primary" : "text-muted-foreground hover:text-foreground hover:bg-muted/30"
+                    }`}
+                  >
+                    {mode === "day" ? "Ngày" : mode === "week" ? "Tuần" : "Tháng"}
+                  </button>
+                ))}
+              </div>
+              <div className="flex items-center gap-2">
+                <button onClick={() => navigate(-1)} className="p-1.5 rounded-lg hover:bg-muted/30 text-muted-foreground"><ChevronLeft className="w-4 h-4" /></button>
+                <button onClick={() => setCurrentDate(new Date())} className="px-3 py-1.5 rounded-lg text-xs font-medium text-primary hover:bg-primary/10 transition-colors">Hôm nay</button>
+                <button onClick={() => navigate(1)} className="p-1.5 rounded-lg hover:bg-muted/30 text-muted-foreground"><ChevronRight className="w-4 h-4" /></button>
+              </div>
+              <div className="text-sm font-medium text-foreground">
+                {viewMode === "day" && format(currentDate, "dd/MM/yyyy")}
+                {viewMode === "week" && `${format(startOfWeek(currentDate, { weekStartsOn: 1 }), "dd/MM")} – ${format(endOfWeek(currentDate, { weekStartsOn: 1 }), "dd/MM")}`}
+                {viewMode === "month" && format(currentDate, "MM/yyyy")}
+              </div>
+            </div>
+
+            {/* Progress */}
+            {totalCount > 0 && (
+              <div className="mb-4">
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-xs text-muted-foreground">{doneCount}/{totalCount} hoàn thành</span>
+                  <span className="text-xs text-primary font-medium">{Math.round((doneCount / totalCount) * 100)}%</span>
+                </div>
+                <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+                  <motion.div className="h-full bg-primary rounded-full" initial={{ width: 0 }} animate={{ width: `${(doneCount / totalCount) * 100}%` }} />
+                </div>
+              </div>
+            )}
+
+            {/* Add task */}
+            <div className="flex gap-2 mb-6">
+              {viewMode !== "day" && (
+                <input
+                  type="date"
+                  value={newTaskDate}
+                  onChange={(e) => setNewTaskDate(e.target.value)}
+                  className="px-3 py-3 rounded-xl bg-muted/50 border border-border text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+                />
+              )}
+              <input
+                placeholder="Thêm task mới..."
+                value={newTask}
+                onChange={(e) => setNewTask(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && newTask) {
+                    if (viewMode === "day") setNewTaskDate(format(currentDate, "yyyy-MM-dd"));
+                    addTask.mutate();
+                  }
+                }}
+                className="flex-1 px-4 py-3 rounded-xl bg-muted/50 border border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm"
+              />
+              <button
+                onClick={() => {
+                  if (viewMode === "day") setNewTaskDate(format(currentDate, "yyyy-MM-dd"));
+                  if (newTask) addTask.mutate();
+                }}
+                disabled={!newTask || addTask.isPending}
+                className="px-4 py-3 rounded-xl bg-primary text-primary-foreground disabled:opacity-40 hover:opacity-90 transition-all"
+              >
+                <Plus className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Content */}
+            {isLoading ? (
+              <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>
+            ) : viewMode === "day" ? (
+              <DayView
+                date={currentDate}
+                tasks={getTasksForDate(format(currentDate, "yyyy-MM-dd"))}
+                onToggle={(id, status) => toggleTask.mutate({ id, status })}
+                onDelete={(id) => deleteTask.mutate(id)}
+                onReorder={(items) => reorderTasks(format(currentDate, "yyyy-MM-dd"), items)}
+                editingNote={editingNote}
+                noteText={noteText}
+                onStartNote={(id, text) => { setEditingNote(id); setNoteText(text || ""); }}
+                onSaveNote={(id) => saveNote.mutate({ id, notes: noteText })}
+                onCancelNote={() => setEditingNote(null)}
+                onNoteChange={setNoteText}
+              />
+            ) : viewMode === "week" ? (
+              <WeekView
+                currentDate={currentDate}
+                getTasksForDate={getTasksForDate}
+                onToggle={(id, status) => toggleTask.mutate({ id, status })}
+                onDelete={(id) => deleteTask.mutate(id)}
+              />
+            ) : (
+              <MonthView
+                currentDate={currentDate}
+                getTasksForDate={getTasksForDate}
+                onSelectDay={(d) => { setCurrentDate(d); setViewMode("day"); }}
+              />
+            )}
+          </>
         )}
       </main>
     </div>
