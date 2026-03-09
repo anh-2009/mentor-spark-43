@@ -286,37 +286,54 @@ export default function Schedule() {
             )}
 
             {/* Add task */}
-            <div className="flex gap-2 mb-6">
-              {viewMode !== "day" && (
-                <input
-                  type="date"
-                  value={newTaskDate}
-                  onChange={(e) => setNewTaskDate(e.target.value)}
-                  className="px-3 py-3 rounded-xl bg-muted/50 border border-border text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
-                />
-              )}
-              <input
-                placeholder="Thêm task mới..."
-                value={newTask}
-                onChange={(e) => setNewTask(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && newTask) {
-                    if (viewMode === "day") setNewTaskDate(format(currentDate, "yyyy-MM-dd"));
-                    addTask.mutate();
-                  }
-                }}
-                className="flex-1 px-4 py-3 rounded-xl bg-muted/50 border border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm"
-              />
-              <button
-                onClick={() => {
-                  if (viewMode === "day") setNewTaskDate(format(currentDate, "yyyy-MM-dd"));
-                  if (newTask) addTask.mutate();
-                }}
-                disabled={!newTask || addTask.isPending}
-                className="px-4 py-3 rounded-xl bg-primary text-primary-foreground disabled:opacity-40 hover:opacity-90 transition-all"
-              >
-                <Plus className="w-4 h-4" />
-              </button>
+            <div className="mb-6">
+              <div className="flex gap-2">
+                {viewMode !== "day" && (
+                  <input
+                    type="date"
+                    value={newTaskDate}
+                    onChange={(e) => setNewTaskDate(e.target.value)}
+                    className="px-3 py-3 rounded-xl bg-muted/50 border border-border text-foreground text-sm input-glow focus:outline-none"
+                  />
+                )}
+                <div className="flex-1 relative">
+                  <input
+                    placeholder="Thêm task mới..."
+                    value={newTask}
+                    onChange={(e) => { setNewTask(e.target.value); if (inputError) setInputError(null); }}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") handleAddTask();
+                    }}
+                    className={`w-full px-4 py-3 rounded-xl bg-muted/50 border text-foreground placeholder:text-muted-foreground input-glow focus:outline-none text-sm transition-colors ${
+                      inputError ? "border-destructive/60 focus:ring-destructive/40" : "border-border"
+                    }`}
+                    aria-invalid={!!inputError}
+                    aria-describedby={inputError ? "task-error" : undefined}
+                  />
+                </div>
+                <button
+                  onClick={handleAddTask}
+                  disabled={addTask.isPending}
+                  className="px-4 py-3 rounded-xl bg-primary text-primary-foreground disabled:opacity-40 hover:opacity-90 transition-all btn-ripple"
+                >
+                  {addTask.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
+                </button>
+              </div>
+              <AnimatePresence>
+                {inputError && (
+                  <motion.p
+                    id="task-error"
+                    initial={{ opacity: 0, y: -4, height: 0 }}
+                    animate={{ opacity: 1, y: 0, height: "auto" }}
+                    exit={{ opacity: 0, y: -4, height: 0 }}
+                    className="flex items-center gap-1.5 text-xs text-destructive mt-1.5 ml-1"
+                    role="alert"
+                  >
+                    <AlertCircle className="w-3 h-3 flex-shrink-0" />
+                    {inputError}
+                  </motion.p>
+                )}
+              </AnimatePresence>
             </div>
 
             {/* Content */}
