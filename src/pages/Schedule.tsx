@@ -404,6 +404,7 @@ interface DayViewProps {
   onSaveNote: (id: string) => void;
   onCancelNote: () => void;
   onNoteChange: (text: string) => void;
+  justToggledId: string | null;
 }
 
 function DayView({ date, tasks, onToggle, onDelete, onReorder, editingNote, noteText, onStartNote, onSaveNote, onCancelNote, onNoteChange }: DayViewProps) {
