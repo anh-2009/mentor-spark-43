@@ -8,6 +8,7 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 import { useRef } from "react";
 import { ScrollProgress } from "@/components/ScrollProgress";
+import GallerySection from "@/components/GallerySection";
 
 const features = [
   {
@@ -93,6 +94,7 @@ export default function Index() {
           <div className="hidden md:flex items-center gap-8">
             <a href="#features" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Features</a>
             <a href="#how-it-works" className="text-sm text-muted-foreground hover:text-foreground transition-colors">How it works</a>
+            <a href="#gallery" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Gallery</a>
             <a href="#stats" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Stats</a>
           </div>
           <Link
@@ -363,6 +365,9 @@ export default function Index() {
           </motion.div>
         </div>
       </section>
+
+      {/* ====== GALLERY ====== */}
+      <GallerySection />
 
       {/* ====== CTA ====== */}
       <section className="py-32 relative z-10">

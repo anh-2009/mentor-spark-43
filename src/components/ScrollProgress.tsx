@@ -1,8 +1,8 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, forwardRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowUp } from "lucide-react";
 
-export function ScrollProgress() {
+export const ScrollProgress = forwardRef<HTMLDivElement>(function ScrollProgress(_, ref) {
   const [progress, setProgress] = useState(0);
   const [showTop, setShowTop] = useState(false);
 
@@ -44,4 +44,4 @@ export function ScrollProgress() {
       </AnimatePresence>
     </>
   );
-}
+});
