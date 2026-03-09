@@ -56,7 +56,7 @@ export default function Schedule() {
   });
 
   // All tasks for analytics
-  const { data: allTasks } = useQuery({
+  const { data: allTasks, isLoading: allTasksLoading, isError: allTasksError, refetch: refetchAllTasks } = useQuery({
     queryKey: ["schedules-all", user?.id],
     queryFn: async () => {
       const { data } = await supabase
