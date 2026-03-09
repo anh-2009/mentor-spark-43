@@ -352,6 +352,7 @@ export default function Schedule() {
                 onSaveNote={(id) => saveNote.mutate({ id, notes: noteText })}
                 onCancelNote={() => setEditingNote(null)}
                 onNoteChange={setNoteText}
+                justToggledId={justToggledId}
               />
             ) : viewMode === "week" ? (
               <WeekView
