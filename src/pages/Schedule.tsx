@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -6,7 +6,7 @@ import Navbar from "@/components/Navbar";
 import { motion, AnimatePresence, Reorder } from "framer-motion";
 import {
   CalendarDays, Plus, Loader2, CheckCircle2, Circle, Trash2,
-  ChevronLeft, ChevronRight, GripVertical, StickyNote, X, BarChart3, PieChart as PieIcon
+  ChevronLeft, ChevronRight, GripVertical, StickyNote, X, BarChart3, PieChart as PieIcon, Undo2, AlertCircle
 } from "lucide-react";
 import { toast } from "sonner";
 import { format, addDays, startOfWeek, endOfWeek, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, addWeeks, addMonths, subDays, subWeeks, subMonths } from "date-fns";
@@ -36,6 +36,9 @@ export default function Schedule() {
   const [newTaskDate, setNewTaskDate] = useState(format(new Date(), "yyyy-MM-dd"));
   const [editingNote, setEditingNote] = useState<string | null>(null);
   const [noteText, setNoteText] = useState("");
+  const [inputError, setInputError] = useState<string | null>(null);
+  const [justToggledId, setJustToggledId] = useState<string | null>(null);
+  const undoTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const dateRange = getDateRange(viewMode, currentDate);
 
@@ -69,12 +72,31 @@ export default function Schedule() {
     enabled: !!user && tabMode === "analytics",
   });
 
+  const validateTask = (value: string): string | null => {
+    const trimmed = value.trim();
+    if (!trimmed) return "Vui lòng nhập tên task";
+    if (trimmed.length < 2) return "Task phải có ít nhất 2 ký tự";
+    if (trimmed.length > 200) return "Task không được quá 200 ký tự";
+    return null;
+  };
+
+  const handleAddTask = () => {
+    const error = validateTask(newTask);
+    if (error) {
+      setInputError(error);
+      return;
+    }
+    setInputError(null);
+    if (viewMode === "day") setNewTaskDate(format(currentDate, "yyyy-MM-dd"));
+    addTask.mutate();
+  };
+
   const addTask = useMutation({
     mutationFn: async () => {
       const maxOrder = tasks?.filter(t => t.task_date === newTaskDate).reduce((max, t) => Math.max(max, t.sort_order), -1) ?? -1;
       const { error } = await supabase.from("schedules").insert({
         user_id: user!.id,
-        task: newTask,
+        task: newTask.trim(),
         task_date: newTaskDate,
         status: "pending",
         sort_order: maxOrder + 1,
@@ -84,6 +106,7 @@ export default function Schedule() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["schedules"] });
       setNewTask("");
+      setInputError(null);
       toast.success("Đã thêm task!");
     },
   });
@@ -93,6 +116,9 @@ export default function Schedule() {
       const newStatus = status === "done" ? "pending" : "done";
       await supabase.from("schedules").update({ status: newStatus }).eq("id", id);
       if (newStatus === "done") {
+        // Show checkmark animation
+        setJustToggledId(id);
+        setTimeout(() => setJustToggledId(null), 1200);
         const { data: prog } = await supabase.from("progress").select("*").eq("user_id", user!.id).single();
         if (prog) {
           await supabase.from("progress").update({ completed_tasks: prog.completed_tasks + 1 }).eq("user_id", user!.id);
@@ -106,12 +132,38 @@ export default function Schedule() {
   });
 
   const deleteTask = useMutation({
-    mutationFn: async (id: string) => {
-      await supabase.from("schedules").delete().eq("id", id);
+    mutationFn: async (taskToDelete: TaskItem) => {
+      // Delete from DB
+      await supabase.from("schedules").delete().eq("id", taskToDelete.id);
+      return taskToDelete;
     },
-    onSuccess: () => {
+    onSuccess: (deletedTask) => {
       queryClient.invalidateQueries({ queryKey: ["schedules"] });
-      toast.success("Đã xóa task");
+
+      // Show undo toast
+      toast("Task đã xóa", {
+        description: deletedTask.task,
+        icon: <Trash2 className="w-4 h-4 text-destructive" />,
+        action: {
+          label: "Hoàn tác",
+          onClick: () => {
+            // Re-insert the task
+            supabase.from("schedules").insert({
+              user_id: user!.id,
+              task: deletedTask.task,
+              task_date: deletedTask.task_date,
+              status: deletedTask.status,
+              sort_order: deletedTask.sort_order,
+              notes: deletedTask.notes,
+              goal_id: deletedTask.goal_id,
+            }).then(() => {
+              queryClient.invalidateQueries({ queryKey: ["schedules"] });
+              toast.success("Đã hoàn tác xóa task");
+            });
+          },
+        },
+        duration: 6000,
+      });
     },
   });
 
@@ -234,37 +286,54 @@ export default function Schedule() {
             )}
 
             {/* Add task */}
-            <div className="flex gap-2 mb-6">
-              {viewMode !== "day" && (
-                <input
-                  type="date"
-                  value={newTaskDate}
-                  onChange={(e) => setNewTaskDate(e.target.value)}
-                  className="px-3 py-3 rounded-xl bg-muted/50 border border-border text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
-                />
-              )}
-              <input
-                placeholder="Thêm task mới..."
-                value={newTask}
-                onChange={(e) => setNewTask(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && newTask) {
-                    if (viewMode === "day") setNewTaskDate(format(currentDate, "yyyy-MM-dd"));
-                    addTask.mutate();
-                  }
-                }}
-                className="flex-1 px-4 py-3 rounded-xl bg-muted/50 border border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm"
-              />
-              <button
-                onClick={() => {
-                  if (viewMode === "day") setNewTaskDate(format(currentDate, "yyyy-MM-dd"));
-                  if (newTask) addTask.mutate();
-                }}
-                disabled={!newTask || addTask.isPending}
-                className="px-4 py-3 rounded-xl bg-primary text-primary-foreground disabled:opacity-40 hover:opacity-90 transition-all"
-              >
-                <Plus className="w-4 h-4" />
-              </button>
+            <div className="mb-6">
+              <div className="flex gap-2">
+                {viewMode !== "day" && (
+                  <input
+                    type="date"
+                    value={newTaskDate}
+                    onChange={(e) => setNewTaskDate(e.target.value)}
+                    className="px-3 py-3 rounded-xl bg-muted/50 border border-border text-foreground text-sm input-glow focus:outline-none"
+                  />
+                )}
+                <div className="flex-1 relative">
+                  <input
+                    placeholder="Thêm task mới..."
+                    value={newTask}
+                    onChange={(e) => { setNewTask(e.target.value); if (inputError) setInputError(null); }}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") handleAddTask();
+                    }}
+                    className={`w-full px-4 py-3 rounded-xl bg-muted/50 border text-foreground placeholder:text-muted-foreground input-glow focus:outline-none text-sm transition-colors ${
+                      inputError ? "border-destructive/60 focus:ring-destructive/40" : "border-border"
+                    }`}
+                    aria-invalid={!!inputError}
+                    aria-describedby={inputError ? "task-error" : undefined}
+                  />
+                </div>
+                <button
+                  onClick={handleAddTask}
+                  disabled={addTask.isPending}
+                  className="px-4 py-3 rounded-xl bg-primary text-primary-foreground disabled:opacity-40 hover:opacity-90 transition-all btn-ripple"
+                >
+                  {addTask.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
+                </button>
+              </div>
+              <AnimatePresence>
+                {inputError && (
+                  <motion.p
+                    id="task-error"
+                    initial={{ opacity: 0, y: -4, height: 0 }}
+                    animate={{ opacity: 1, y: 0, height: "auto" }}
+                    exit={{ opacity: 0, y: -4, height: 0 }}
+                    className="flex items-center gap-1.5 text-xs text-destructive mt-1.5 ml-1"
+                    role="alert"
+                  >
+                    <AlertCircle className="w-3 h-3 flex-shrink-0" />
+                    {inputError}
+                  </motion.p>
+                )}
+              </AnimatePresence>
             </div>
 
             {/* Content */}
@@ -275,7 +344,7 @@ export default function Schedule() {
                 date={currentDate}
                 tasks={getTasksForDate(format(currentDate, "yyyy-MM-dd"))}
                 onToggle={(id, status) => toggleTask.mutate({ id, status })}
-                onDelete={(id) => deleteTask.mutate(id)}
+                onDelete={(id) => { const t = tasks?.find(x => x.id === id); if (t) deleteTask.mutate(t); }}
                 onReorder={(items) => reorderTasks(format(currentDate, "yyyy-MM-dd"), items)}
                 editingNote={editingNote}
                 noteText={noteText}
@@ -283,13 +352,14 @@ export default function Schedule() {
                 onSaveNote={(id) => saveNote.mutate({ id, notes: noteText })}
                 onCancelNote={() => setEditingNote(null)}
                 onNoteChange={setNoteText}
+                justToggledId={justToggledId}
               />
             ) : viewMode === "week" ? (
               <WeekView
                 currentDate={currentDate}
                 getTasksForDate={getTasksForDate}
                 onToggle={(id, status) => toggleTask.mutate({ id, status })}
-                onDelete={(id) => deleteTask.mutate(id)}
+                onDelete={(id) => { const t = tasks?.find(x => x.id === id); if (t) deleteTask.mutate(t); }}
               />
             ) : (
               <MonthView
@@ -335,9 +405,10 @@ interface DayViewProps {
   onSaveNote: (id: string) => void;
   onCancelNote: () => void;
   onNoteChange: (text: string) => void;
+  justToggledId: string | null;
 }
 
-function DayView({ date, tasks, onToggle, onDelete, onReorder, editingNote, noteText, onStartNote, onSaveNote, onCancelNote, onNoteChange }: DayViewProps) {
+function DayView({ date, tasks, onToggle, onDelete, onReorder, editingNote, noteText, onStartNote, onSaveNote, onCancelNote, onNoteChange, justToggledId }: DayViewProps) {
   if (tasks.length === 0) {
     return (
       <div className="text-center py-16">
@@ -354,12 +425,30 @@ function DayView({ date, tasks, onToggle, onDelete, onReorder, editingNote, note
           <div className="glass p-4 flex flex-col group">
             <div className="flex items-center gap-3">
               <GripVertical className="w-4 h-4 text-muted-foreground/40 cursor-grab active:cursor-grabbing flex-shrink-0" />
-              <button onClick={() => onToggle(t.id, t.status)}>
+              <button onClick={() => onToggle(t.id, t.status)} className="relative flex-shrink-0">
                 {t.status === "done" ? (
-                  <CheckCircle2 className="w-5 h-5 text-primary" />
+                  <motion.div
+                    initial={justToggledId === t.id ? { scale: 0 } : false}
+                    animate={{ scale: 1 }}
+                    transition={{ type: "spring", stiffness: 400, damping: 15 }}
+                  >
+                    <CheckCircle2 className="w-5 h-5 text-primary" />
+                  </motion.div>
                 ) : (
                   <Circle className="w-5 h-5 text-muted-foreground hover:text-primary transition-colors" />
                 )}
+                {/* Success ripple */}
+                <AnimatePresence>
+                  {justToggledId === t.id && t.status === "done" && (
+                    <motion.div
+                      initial={{ scale: 0.5, opacity: 0.8 }}
+                      animate={{ scale: 2.5, opacity: 0 }}
+                      exit={{ opacity: 0 }}
+                      transition={{ duration: 0.6 }}
+                      className="absolute inset-0 rounded-full bg-primary/30 pointer-events-none"
+                    />
+                  )}
+                </AnimatePresence>
               </button>
               <span className={`flex-1 text-sm ${t.status === "done" ? "line-through text-muted-foreground" : "text-foreground"}`}>
                 {t.task}
