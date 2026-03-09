@@ -8,6 +8,7 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 import { useRef } from "react";
 import { ScrollProgress } from "@/components/ScrollProgress";
+import GallerySection from "@/components/GallerySection";
 
 const features = [
   {
