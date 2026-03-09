@@ -365,6 +365,9 @@ export default function Index() {
         </div>
       </section>
 
+      {/* ====== GALLERY ====== */}
+      <GallerySection />
+
       {/* ====== CTA ====== */}
       <section className="py-32 relative z-10">
         <div className="max-w-3xl mx-auto px-6 text-center">
