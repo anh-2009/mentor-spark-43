@@ -72,12 +72,31 @@ export default function Schedule() {
     enabled: !!user && tabMode === "analytics",
   });
 
+  const validateTask = (value: string): string | null => {
+    const trimmed = value.trim();
+    if (!trimmed) return "Vui lòng nhập tên task";
+    if (trimmed.length < 2) return "Task phải có ít nhất 2 ký tự";
+    if (trimmed.length > 200) return "Task không được quá 200 ký tự";
+    return null;
+  };
+
+  const handleAddTask = () => {
+    const error = validateTask(newTask);
+    if (error) {
+      setInputError(error);
+      return;
+    }
+    setInputError(null);
+    if (viewMode === "day") setNewTaskDate(format(currentDate, "yyyy-MM-dd"));
+    addTask.mutate();
+  };
+
   const addTask = useMutation({
     mutationFn: async () => {
       const maxOrder = tasks?.filter(t => t.task_date === newTaskDate).reduce((max, t) => Math.max(max, t.sort_order), -1) ?? -1;
       const { error } = await supabase.from("schedules").insert({
         user_id: user!.id,
-        task: newTask,
+        task: newTask.trim(),
         task_date: newTaskDate,
         status: "pending",
         sort_order: maxOrder + 1,
@@ -87,6 +106,7 @@ export default function Schedule() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["schedules"] });
       setNewTask("");
+      setInputError(null);
       toast.success("Đã thêm task!");
     },
   });
@@ -96,6 +116,9 @@ export default function Schedule() {
       const newStatus = status === "done" ? "pending" : "done";
       await supabase.from("schedules").update({ status: newStatus }).eq("id", id);
       if (newStatus === "done") {
+        // Show checkmark animation
+        setJustToggledId(id);
+        setTimeout(() => setJustToggledId(null), 1200);
         const { data: prog } = await supabase.from("progress").select("*").eq("user_id", user!.id).single();
         if (prog) {
           await supabase.from("progress").update({ completed_tasks: prog.completed_tasks + 1 }).eq("user_id", user!.id);
@@ -109,12 +132,38 @@ export default function Schedule() {
   });
 
   const deleteTask = useMutation({
-    mutationFn: async (id: string) => {
-      await supabase.from("schedules").delete().eq("id", id);
+    mutationFn: async (taskToDelete: TaskItem) => {
+      // Delete from DB
+      await supabase.from("schedules").delete().eq("id", taskToDelete.id);
+      return taskToDelete;
     },
-    onSuccess: () => {
+    onSuccess: (deletedTask) => {
       queryClient.invalidateQueries({ queryKey: ["schedules"] });
-      toast.success("Đã xóa task");
+
+      // Show undo toast
+      toast("Task đã xóa", {
+        description: deletedTask.task,
+        icon: <Trash2 className="w-4 h-4 text-destructive" />,
+        action: {
+          label: "Hoàn tác",
+          onClick: () => {
+            // Re-insert the task
+            supabase.from("schedules").insert({
+              user_id: user!.id,
+              task: deletedTask.task,
+              task_date: deletedTask.task_date,
+              status: deletedTask.status,
+              sort_order: deletedTask.sort_order,
+              notes: deletedTask.notes,
+              goal_id: deletedTask.goal_id,
+            }).then(() => {
+              queryClient.invalidateQueries({ queryKey: ["schedules"] });
+              toast.success("Đã hoàn tác xóa task");
+            });
+          },
+        },
+        duration: 6000,
+      });
     },
   });
 
