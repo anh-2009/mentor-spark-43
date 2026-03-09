@@ -425,12 +425,30 @@ function DayView({ date, tasks, onToggle, onDelete, onReorder, editingNote, note
           <div className="glass p-4 flex flex-col group">
             <div className="flex items-center gap-3">
               <GripVertical className="w-4 h-4 text-muted-foreground/40 cursor-grab active:cursor-grabbing flex-shrink-0" />
-              <button onClick={() => onToggle(t.id, t.status)}>
+              <button onClick={() => onToggle(t.id, t.status)} className="relative flex-shrink-0">
                 {t.status === "done" ? (
-                  <CheckCircle2 className="w-5 h-5 text-primary" />
+                  <motion.div
+                    initial={justToggledId === t.id ? { scale: 0 } : false}
+                    animate={{ scale: 1 }}
+                    transition={{ type: "spring", stiffness: 400, damping: 15 }}
+                  >
+                    <CheckCircle2 className="w-5 h-5 text-primary" />
+                  </motion.div>
                 ) : (
                   <Circle className="w-5 h-5 text-muted-foreground hover:text-primary transition-colors" />
                 )}
+                {/* Success ripple */}
+                <AnimatePresence>
+                  {justToggledId === t.id && t.status === "done" && (
+                    <motion.div
+                      initial={{ scale: 0.5, opacity: 0.8 }}
+                      animate={{ scale: 2.5, opacity: 0 }}
+                      exit={{ opacity: 0 }}
+                      transition={{ duration: 0.6 }}
+                      className="absolute inset-0 rounded-full bg-primary/30 pointer-events-none"
+                    />
+                  )}
+                </AnimatePresence>
               </button>
               <span className={`flex-1 text-sm ${t.status === "done" ? "line-through text-muted-foreground" : "text-foreground"}`}>
                 {t.task}
