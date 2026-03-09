@@ -56,7 +56,7 @@ export default function Schedule() {
   });
 
   // All tasks for analytics
-  const { data: allTasks } = useQuery({
+  const { data: allTasks, isLoading: allTasksLoading, isError: allTasksError, refetch: refetchAllTasks } = useQuery({
     queryKey: ["schedules-all", user?.id],
     queryFn: async () => {
       const { data } = await supabase
@@ -188,8 +188,8 @@ export default function Schedule() {
             animate={{ opacity: 1 }}
             className="grid grid-cols-1 md:grid-cols-2 gap-4"
           >
-            <BarAnalytics tasks={allTasks ?? []} />
-            <PieAnalytics tasks={allTasks ?? []} />
+            <BarAnalytics tasks={allTasks ?? []} isLoading={allTasksLoading} error={allTasksError} onRetry={() => refetchAllTasks()} />
+            <PieAnalytics tasks={allTasks ?? []} isLoading={allTasksLoading} error={allTasksError} onRetry={() => refetchAllTasks()} />
           </motion.div>
         ) : (
           <>
