@@ -341,7 +341,7 @@ export default function Schedule() {
                 currentDate={currentDate}
                 getTasksForDate={getTasksForDate}
                 onToggle={(id, status) => toggleTask.mutate({ id, status })}
-                onDelete={(id) => deleteTask.mutate(id)}
+                onDelete={(id) => { const t = tasks?.find(x => x.id === id); if (t) deleteTask.mutate(t); }}
               />
             ) : (
               <MonthView
