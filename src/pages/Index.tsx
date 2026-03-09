@@ -76,6 +76,7 @@ export default function Index() {
 
   return (
     <div className="min-h-screen bg-background relative overflow-hidden">
+      <ScrollProgress />
       {/* Gradient mesh bg */}
       <div className="gradient-mesh fixed inset-0 pointer-events-none" />
       <div className="grid-pattern fixed inset-0 pointer-events-none opacity-30" />
