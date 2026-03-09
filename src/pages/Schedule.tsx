@@ -407,7 +407,7 @@ interface DayViewProps {
   justToggledId: string | null;
 }
 
-function DayView({ date, tasks, onToggle, onDelete, onReorder, editingNote, noteText, onStartNote, onSaveNote, onCancelNote, onNoteChange }: DayViewProps) {
+function DayView({ date, tasks, onToggle, onDelete, onReorder, editingNote, noteText, onStartNote, onSaveNote, onCancelNote, onNoteChange, justToggledId }: DayViewProps) {
   if (tasks.length === 0) {
     return (
       <div className="text-center py-16">
