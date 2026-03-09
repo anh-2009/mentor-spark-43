@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRef } from "react";
+import { ScrollProgress } from "@/components/ScrollProgress";
 
 const features = [
   {
