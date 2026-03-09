@@ -327,7 +327,7 @@ export default function Schedule() {
                 date={currentDate}
                 tasks={getTasksForDate(format(currentDate, "yyyy-MM-dd"))}
                 onToggle={(id, status) => toggleTask.mutate({ id, status })}
-                onDelete={(id) => deleteTask.mutate(id)}
+                onDelete={(id) => { const t = tasks?.find(x => x.id === id); if (t) deleteTask.mutate(t); }}
                 onReorder={(items) => reorderTasks(format(currentDate, "yyyy-MM-dd"), items)}
                 editingNote={editingNote}
                 noteText={noteText}
