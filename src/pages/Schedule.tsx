@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -6,7 +6,7 @@ import Navbar from "@/components/Navbar";
 import { motion, AnimatePresence, Reorder } from "framer-motion";
 import {
   CalendarDays, Plus, Loader2, CheckCircle2, Circle, Trash2,
-  ChevronLeft, ChevronRight, GripVertical, StickyNote, X, BarChart3, PieChart as PieIcon
+  ChevronLeft, ChevronRight, GripVertical, StickyNote, X, BarChart3, PieChart as PieIcon, Undo2, AlertCircle
 } from "lucide-react";
 import { toast } from "sonner";
 import { format, addDays, startOfWeek, endOfWeek, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, addWeeks, addMonths, subDays, subWeeks, subMonths } from "date-fns";
@@ -36,6 +36,9 @@ export default function Schedule() {
   const [newTaskDate, setNewTaskDate] = useState(format(new Date(), "yyyy-MM-dd"));
   const [editingNote, setEditingNote] = useState<string | null>(null);
   const [noteText, setNoteText] = useState("");
+  const [inputError, setInputError] = useState<string | null>(null);
+  const [justToggledId, setJustToggledId] = useState<string | null>(null);
+  const undoTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const dateRange = getDateRange(viewMode, currentDate);
 
