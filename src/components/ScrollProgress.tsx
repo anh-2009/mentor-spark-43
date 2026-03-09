@@ -44,4 +44,4 @@ export const ScrollProgress = forwardRef<HTMLDivElement>(function ScrollProgress
       </AnimatePresence>
     </>
   );
-}
+});
