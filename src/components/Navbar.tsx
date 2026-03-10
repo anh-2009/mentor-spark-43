@@ -1,6 +1,6 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { Brain, MessageSquare, Map, CalendarDays, LayoutDashboard, LogOut, Menu, X, BookOpen } from "lucide-react";
+import { Brain, MessageSquare, Map, CalendarDays, LayoutDashboard, LogOut, Menu, X, BookOpen, Briefcase } from "lucide-react";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -9,6 +9,7 @@ const NAV_ITEMS = [
   { path: "/chat", icon: MessageSquare, label: "AI Chat" },
   { path: "/roadmap", icon: Map, label: "Roadmap" },
   { path: "/schedule", icon: CalendarDays, label: "Schedule" },
+  { path: "/career", icon: Briefcase, label: "Career" },
   { path: "/prompts", icon: BookOpen, label: "Prompts" },
 ];
 
