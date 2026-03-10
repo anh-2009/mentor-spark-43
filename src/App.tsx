@@ -12,6 +12,7 @@ import Chat from "./pages/Chat";
 import Roadmap from "./pages/Roadmap";
 import Schedule from "./pages/Schedule";
 import PromptVault from "./pages/PromptVault";
+import Career from "./pages/Career";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
