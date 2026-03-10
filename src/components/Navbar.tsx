@@ -1,6 +1,6 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { Brain, MessageSquare, Map, CalendarDays, LayoutDashboard, LogOut, Menu, X, BookOpen } from "lucide-react";
+import { Brain, MessageSquare, Map, CalendarDays, LayoutDashboard, LogOut, Menu, X, BookOpen, Briefcase } from "lucide-react";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
