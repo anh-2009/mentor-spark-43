@@ -1,12 +1,13 @@
 import { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { Briefcase, Plus, X, Sparkles, TrendingUp, Target, ArrowRight, Loader2, Star, Zap, BookOpen } from "lucide-react";
+import { motion } from "framer-motion";
+import { Briefcase, Plus, X, Sparkles, TrendingUp, Target, ArrowRight, Loader2, Star, Zap, BookOpen, History, Trash2, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import Navbar from "@/components/Navbar";
 
 interface CareerResult {
@@ -24,6 +25,15 @@ interface AnalysisResult {
   careers: CareerResult[];
   skill_gaps: string[];
   summary: string;
+}
+
+interface SavedAnalysis {
+  id: string;
+  skills: string[];
+  interests: string[];
+  experience_level: string;
+  result: AnalysisResult;
+  created_at: string;
 }
 
 const EXPERIENCE_LEVELS = [
@@ -44,6 +54,7 @@ const fadeUp = {
 export default function Career() {
   const { user } = useAuth();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [skills, setSkills] = useState<string[]>([]);
   const [interests, setInterests] = useState<string[]>([]);
   const [experienceLevel, setExperienceLevel] = useState("student");
@@ -51,6 +62,22 @@ export default function Career() {
   const [interestInput, setInterestInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<AnalysisResult | null>(null);
+  const [showHistory, setShowHistory] = useState(false);
+  const [viewingHistoryId, setViewingHistoryId] = useState<string | null>(null);
+
+  const { data: history } = useQuery({
+    queryKey: ["career-history", user?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("career_analyses")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .limit(20);
+      if (error) throw error;
+      return (data ?? []) as unknown as SavedAnalysis[];
+    },
+    enabled: !!user,
+  });
 
   const addSkill = (skill: string) => {
     const s = skill.trim();
@@ -87,12 +114,47 @@ export default function Career() {
         throw new Error(err.error || "Không thể phân tích");
       }
 
-      const data = await resp.json();
+      const data: AnalysisResult = await resp.json();
       setResult(data);
+      setViewingHistoryId(null);
+
+      // Save to database
+      const { error } = await supabase.from("career_analyses").insert({
+        user_id: user!.id,
+        skills,
+        interests,
+        experience_level: experienceLevel,
+        result: data as any,
+      });
+      if (error) console.error("Failed to save analysis:", error);
+      else queryClient.invalidateQueries({ queryKey: ["career-history"] });
+
+      toast({ title: "Đã lưu kết quả phân tích!" });
     } catch (e: any) {
       toast({ title: "Lỗi", description: e.message, variant: "destructive" });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const viewHistory = (item: SavedAnalysis) => {
+    setResult(item.result);
+    setSkills(item.skills);
+    setInterests(item.interests);
+    setExperienceLevel(item.experience_level);
+    setViewingHistoryId(item.id);
+    setShowHistory(false);
+  };
+
+  const deleteHistory = async (id: string) => {
+    const { error } = await supabase.from("career_analyses").delete().eq("id", id);
+    if (!error) {
+      queryClient.invalidateQueries({ queryKey: ["career-history"] });
+      if (viewingHistoryId === id) {
+        setResult(null);
+        setViewingHistoryId(null);
+      }
+      toast({ title: "Đã xóa" });
     }
   };
 
@@ -109,22 +171,87 @@ export default function Career() {
     return "bg-muted text-muted-foreground";
   };
 
+  const formatDate = (dateStr: string) => {
+    const d = new Date(dateStr);
+    return d.toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" });
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <div className="gradient-mesh fixed inset-0 pointer-events-none" />
       <Navbar />
       <main className="relative z-10 pt-20 pb-8 px-4 md:px-6 max-w-5xl mx-auto">
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mb-8">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="w-10 h-10 rounded-xl bg-secondary/20 flex items-center justify-center">
-              <Briefcase className="w-5 h-5 text-secondary" />
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-secondary/20 flex items-center justify-center">
+                <Briefcase className="w-5 h-5 text-secondary" />
+              </div>
+              <h1 className="font-display text-2xl md:text-3xl font-bold text-foreground">
+                Career <span className="gradient-text">Recommendation</span>
+              </h1>
             </div>
-            <h1 className="font-display text-2xl md:text-3xl font-bold text-foreground">
-              Career <span className="gradient-text">Recommendation</span>
-            </h1>
+            {history && history.length > 0 && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowHistory(!showHistory)}
+                className="gap-2"
+              >
+                <History className="w-4 h-4" />
+                Lịch sử ({history.length})
+              </Button>
+            )}
           </div>
           <p className="text-muted-foreground text-sm">AI phân tích skills của bạn và đề xuất career path phù hợp nhất</p>
         </motion.div>
+
+        {/* History Panel */}
+        {showHistory && history && history.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            className="mb-6 glass-hover p-5 md:p-6"
+          >
+            <h2 className="font-display font-semibold text-foreground mb-4 flex items-center gap-2">
+              <Clock className="w-4 h-4 text-muted-foreground" /> Lịch sử phân tích
+            </h2>
+            <div className="space-y-2 max-h-80 overflow-y-auto">
+              {history.map((item) => (
+                <div
+                  key={item.id}
+                  className={`flex items-center justify-between p-3 rounded-lg transition-colors cursor-pointer ${
+                    viewingHistoryId === item.id ? "bg-primary/10 border border-primary/30" : "bg-muted/20 hover:bg-muted/30"
+                  }`}
+                  onClick={() => viewHistory(item)}
+                >
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap gap-1.5 mb-1">
+                      {item.skills.slice(0, 4).map((s) => (
+                        <Badge key={s} variant="outline" className="text-xs border-border/50">{s}</Badge>
+                      ))}
+                      {item.skills.length > 4 && (
+                        <Badge variant="outline" className="text-xs border-border/50">+{item.skills.length - 4}</Badge>
+                      )}
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      {formatDate(item.created_at)} · {item.result?.careers?.length ?? 0} career paths
+                    </p>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="shrink-0 h-8 w-8 text-muted-foreground hover:text-destructive"
+                    onClick={(e) => { e.stopPropagation(); deleteHistory(item.id); }}
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </Button>
+                </div>
+              ))}
+            </div>
+          </motion.div>
+        )}
 
         {!result ? (
           <div className="space-y-6">
@@ -242,9 +369,16 @@ export default function Career() {
         ) : (
           <div className="space-y-6">
             {/* Back button */}
-            <Button variant="outline" onClick={() => setResult(null)} className="gap-2">
-              <ArrowRight className="w-4 h-4 rotate-180" /> Phân tích lại
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button variant="outline" onClick={() => { setResult(null); setViewingHistoryId(null); }} className="gap-2">
+                <ArrowRight className="w-4 h-4 rotate-180" /> Phân tích mới
+              </Button>
+              {viewingHistoryId && (
+                <Badge variant="outline" className="text-xs text-muted-foreground">
+                  <Clock className="w-3 h-3 mr-1" /> Đang xem từ lịch sử
+                </Badge>
+              )}
+            </div>
 
             {/* Summary */}
             {result.summary && (
