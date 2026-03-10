@@ -9,6 +9,7 @@ const NAV_ITEMS = [
   { path: "/chat", icon: MessageSquare, label: "AI Chat" },
   { path: "/roadmap", icon: Map, label: "Roadmap" },
   { path: "/schedule", icon: CalendarDays, label: "Schedule" },
+  { path: "/career", icon: Briefcase, label: "Career" },
   { path: "/prompts", icon: BookOpen, label: "Prompts" },
 ];
 
