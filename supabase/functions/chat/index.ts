@@ -19,7 +19,7 @@ Rules:
 - Keep responses focused and under 500 words
 - You can help create study roadmaps, daily schedules, and motivation`;
 
-const GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:streamGenerateContent?alt=sse";
+const GEMINI_BASE = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:streamGenerateContent?alt=sse";
 const LOVABLE_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
 
 async function callGemini(apiKey: string, messages: any[], systemPrompt: string) {
