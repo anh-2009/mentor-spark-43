@@ -42,7 +42,7 @@ Rules:
 - Risks should be practical (burnout, complexity, etc.)
 - Respond ONLY with valid JSON, no explanation text`;
 
-const GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent";
+const GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent";
 const LOVABLE_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
 
 async function callGemini(apiKey: string, userPrompt: string) {

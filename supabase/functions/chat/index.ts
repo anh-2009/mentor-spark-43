@@ -19,7 +19,7 @@ Rules:
 - Keep responses focused and under 500 words
 - You can help create study roadmaps, daily schedules, and motivation`;
 
-const GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:streamGenerateContent?alt=sse";
+const GEMINI_BASE = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:streamGenerateContent?alt=sse";
 const LOVABLE_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
 
 async function callGemini(apiKey: string, messages: any[], systemPrompt: string) {
@@ -29,11 +29,11 @@ async function callGemini(apiKey: string, messages: any[], systemPrompt: string)
     parts: [{ text: m.content }],
   }));
 
-  const resp = await fetch(GEMINI_URL, {
+  const url = `${GEMINI_BASE}&key=${apiKey}`;
+  const resp = await fetch(url, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "x-goog-api-key": apiKey,
     },
     body: JSON.stringify({
       system_instruction: { parts: [{ text: systemPrompt }] },
