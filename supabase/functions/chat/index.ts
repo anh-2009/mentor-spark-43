@@ -19,6 +19,103 @@ Rules:
 - Keep responses focused and under 500 words
 - You can help create study roadmaps, daily schedules, and motivation`;
 
+const GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:streamGenerateContent?alt=sse";
+const LOVABLE_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
+
+async function callGemini(apiKey: string, messages: any[], systemPrompt: string) {
+  // Convert OpenAI-style messages to Gemini format
+  const contents = messages.map((m: any) => ({
+    role: m.role === "assistant" ? "model" : "user",
+    parts: [{ text: m.content }],
+  }));
+
+  const resp = await fetch(GEMINI_URL, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "x-goog-api-key": apiKey,
+    },
+    body: JSON.stringify({
+      system_instruction: { parts: [{ text: systemPrompt }] },
+      contents,
+      generationConfig: { maxOutputTokens: 500, temperature: 0.7 },
+    }),
+  });
+
+  if (!resp.ok) {
+    const errText = await resp.text();
+    console.error("Gemini error:", resp.status, errText);
+    throw new Error(`Gemini API error: ${resp.status}`);
+  }
+
+  // Gemini SSE → OpenAI-compatible SSE transform
+  const reader = resp.body!.getReader();
+  const decoder = new TextDecoder();
+  const encoder = new TextEncoder();
+
+  const stream = new ReadableStream({
+    async start(controller) {
+      let buffer = "";
+      try {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          buffer += decoder.decode(value, { stream: true });
+
+          let idx: number;
+          while ((idx = buffer.indexOf("\n")) !== -1) {
+            let line = buffer.slice(0, idx);
+            buffer = buffer.slice(idx + 1);
+            if (line.endsWith("\r")) line = line.slice(0, -1);
+            if (!line.startsWith("data: ")) continue;
+
+            const jsonStr = line.slice(6).trim();
+            if (!jsonStr || jsonStr === "[DONE]") continue;
+
+            try {
+              const parsed = JSON.parse(jsonStr);
+              const text = parsed.candidates?.[0]?.content?.parts?.[0]?.text;
+              if (text) {
+                // Emit OpenAI-compatible SSE
+                const chunk = JSON.stringify({
+                  choices: [{ delta: { content: text } }],
+                });
+                controller.enqueue(encoder.encode(`data: ${chunk}\n\n`));
+              }
+            } catch { /* skip partial */ }
+          }
+        }
+        controller.enqueue(encoder.encode("data: [DONE]\n\n"));
+        controller.close();
+      } catch (e) {
+        controller.error(e);
+      }
+    },
+  });
+
+  return stream;
+}
+
+async function callLovable(apiKey: string, messages: any[], systemPrompt: string) {
+  const resp = await fetch(LOVABLE_URL, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      model: "google/gemini-3-flash-preview",
+      messages: [{ role: "system", content: systemPrompt }, ...messages],
+      stream: true,
+      max_tokens: 500,
+      temperature: 0.7,
+    }),
+  });
+
+  if (!resp.ok) throw new Error(`Lovable AI error: ${resp.status}`);
+  return resp.body!;
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
@@ -46,73 +143,44 @@ serve(async (req) => {
       });
     }
 
-    const userId = claimsData.claims.sub;
     const { messages, sentiment, systemPrompt } = await req.json();
 
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
-
-    // Use custom system prompt if provided (includes vault injections), otherwise default
     let enhancedPrompt = systemPrompt || SYSTEM_PROMPT;
     if (!systemPrompt) {
-      if (sentiment === "stressed") {
-        enhancedPrompt += "\n\nThe student is currently feeling stressed. Be extra supportive and encouraging.";
-      } else if (sentiment === "overwhelmed") {
-        enhancedPrompt += "\n\nThe student feels overwhelmed. Focus on simplifying and prioritizing.";
-      } else if (sentiment === "demotivated") {
-        enhancedPrompt += "\n\nThe student seems demotivated. Share inspiring perspectives and celebrate small wins.";
-      }
+      if (sentiment === "stressed") enhancedPrompt += "\n\nThe student is currently feeling stressed. Be extra supportive and encouraging.";
+      else if (sentiment === "overwhelmed") enhancedPrompt += "\n\nThe student feels overwhelmed. Focus on simplifying and prioritizing.";
+      else if (sentiment === "demotivated") enhancedPrompt += "\n\nThe student seems demotivated. Share inspiring perspectives and celebrate small wins.";
     }
 
-    // Only send last 5 messages for performance
     const recentMessages = messages.slice(-5);
 
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "google/gemini-3-flash-preview",
-        messages: [
-          { role: "system", content: enhancedPrompt },
-          ...recentMessages,
-        ],
-        stream: true,
-        max_tokens: 500,
-        temperature: 0.7,
-      }),
-    });
+    // Try Gemini Plus first, fallback to Lovable AI
+    const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
+    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
 
-    if (!response.ok) {
-      if (response.status === 429) {
-        return new Response(JSON.stringify({ error: "Quá nhiều yêu cầu. Vui lòng thử lại sau. / Too many requests. Please try again later." }), {
-          status: 429,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
+    let stream: ReadableStream;
+    try {
+      if (GEMINI_API_KEY) {
+        console.log("Using Gemini Plus as primary AI");
+        stream = await callGemini(GEMINI_API_KEY, recentMessages, enhancedPrompt);
+      } else {
+        throw new Error("No Gemini key, fallback");
       }
-      if (response.status === 402) {
-        return new Response(JSON.stringify({ error: "Đã hết credit AI. / AI credits exhausted." }), {
-          status: 402,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-      const t = await response.text();
-      console.error("AI gateway error:", response.status, t);
-      return new Response(JSON.stringify({ error: "AI gateway error" }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+    } catch (e) {
+      console.log("Gemini failed, falling back to Lovable AI:", e);
+      if (!LOVABLE_API_KEY) throw new Error("No AI keys configured");
+      stream = await callLovable(LOVABLE_API_KEY, recentMessages, enhancedPrompt);
     }
 
-    return new Response(response.body, {
+    return new Response(stream, {
       headers: { ...corsHeaders, "Content-Type": "text/event-stream" },
     });
   } catch (e) {
     console.error("chat error:", e);
-    return new Response(JSON.stringify({ error: e instanceof Error ? e.message : "Unknown error" }), {
-      status: 500,
+    const msg = e instanceof Error ? e.message : "Unknown error";
+    const status = msg.includes("429") ? 429 : msg.includes("402") ? 402 : 500;
+    return new Response(JSON.stringify({ error: msg }), {
+      status,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
