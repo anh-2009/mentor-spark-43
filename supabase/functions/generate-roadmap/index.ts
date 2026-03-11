@@ -42,6 +42,53 @@ Rules:
 - Risks should be practical (burnout, complexity, etc.)
 - Respond ONLY with valid JSON, no explanation text`;
 
+const GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent";
+const LOVABLE_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
+
+async function callGemini(apiKey: string, userPrompt: string) {
+  const resp = await fetch(`${GEMINI_URL}?key=${apiKey}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      system_instruction: { parts: [{ text: ROADMAP_PROMPT }] },
+      contents: [{ role: "user", parts: [{ text: userPrompt }] }],
+      generationConfig: { maxOutputTokens: 2000, temperature: 0.6 },
+    }),
+  });
+
+  if (!resp.ok) {
+    const t = await resp.text();
+    console.error("Gemini error:", resp.status, t);
+    throw new Error(`Gemini error: ${resp.status}`);
+  }
+
+  const data = await resp.json();
+  return data.candidates?.[0]?.content?.parts?.[0]?.text || "";
+}
+
+async function callLovable(apiKey: string, userPrompt: string) {
+  const resp = await fetch(LOVABLE_URL, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      model: "google/gemini-2.5-flash",
+      messages: [
+        { role: "system", content: ROADMAP_PROMPT },
+        { role: "user", content: userPrompt },
+      ],
+      temperature: 0.6,
+      max_tokens: 2000,
+    }),
+  });
+
+  if (!resp.ok) throw new Error(`Lovable AI error: ${resp.status}`);
+  const data = await resp.json();
+  return data.choices?.[0]?.message?.content || "";
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
@@ -70,9 +117,6 @@ serve(async (req) => {
 
     const { skill, level, duration_weeks, goal_id } = await req.json();
 
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
-
     const userPrompt = `Create a detailed study roadmap for:
 - Skill: ${skill}
 - Level: ${level}
@@ -80,34 +124,22 @@ serve(async (req) => {
 
 Generate a comprehensive roadmap with milestones, KPIs, resources, and risk analysis.`;
 
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
-        messages: [
-          { role: "system", content: ROADMAP_PROMPT },
-          { role: "user", content: userPrompt },
-        ],
-        temperature: 0.6,
-        max_tokens: 2000,
-      }),
-    });
+    const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
+    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
 
-    if (!response.ok) {
-      const t = await response.text();
-      console.error("AI error:", response.status, t);
-      return new Response(JSON.stringify({ error: "AI generation failed" }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+    let content: string;
+    try {
+      if (GEMINI_API_KEY) {
+        console.log("Using Gemini Plus as primary AI");
+        content = await callGemini(GEMINI_API_KEY, userPrompt);
+      } else {
+        throw new Error("No Gemini key");
+      }
+    } catch (e) {
+      console.log("Gemini failed, falling back to Lovable AI:", e);
+      if (!LOVABLE_API_KEY) throw new Error("No AI keys configured");
+      content = await callLovable(LOVABLE_API_KEY, userPrompt);
     }
-
-    const aiData = await response.json();
-    let content = aiData.choices?.[0]?.message?.content ?? "";
 
     // Strip markdown code fences if present
     content = content.replace(/^```json?\s*/i, "").replace(/```\s*$/i, "").trim();
@@ -124,13 +156,9 @@ Generate a comprehensive roadmap with milestones, KPIs, resources, and risk anal
     }
 
     // Save to database
-    const userId = authUser.id;
     const { data: roadmap, error: dbError } = await supabase
       .from("roadmaps")
-      .upsert(
-        { goal_id, content: roadmapContent },
-        { onConflict: "goal_id" }
-      )
+      .upsert({ goal_id, content: roadmapContent }, { onConflict: "goal_id" })
       .select()
       .single();
 
