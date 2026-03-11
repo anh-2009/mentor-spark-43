@@ -29,11 +29,11 @@ async function callGemini(apiKey: string, messages: any[], systemPrompt: string)
     parts: [{ text: m.content }],
   }));
 
-  const resp = await fetch(GEMINI_URL, {
+  const url = `${GEMINI_BASE}&key=${apiKey}`;
+  const resp = await fetch(url, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "x-goog-api-key": apiKey,
     },
     body: JSON.stringify({
       system_instruction: { parts: [{ text: systemPrompt }] },
