@@ -42,53 +42,6 @@ Rules:
 - Risks should be practical (burnout, complexity, etc.)
 - Respond ONLY with valid JSON, no explanation text`;
 
-const GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent";
-const LOVABLE_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
-
-async function callGemini(apiKey: string, userPrompt: string) {
-  const resp = await fetch(`${GEMINI_URL}?key=${apiKey}`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      system_instruction: { parts: [{ text: ROADMAP_PROMPT }] },
-      contents: [{ role: "user", parts: [{ text: userPrompt }] }],
-      generationConfig: { maxOutputTokens: 2000, temperature: 0.6 },
-    }),
-  });
-
-  if (!resp.ok) {
-    const t = await resp.text();
-    console.error("Gemini error:", resp.status, t);
-    throw new Error(`Gemini error: ${resp.status}`);
-  }
-
-  const data = await resp.json();
-  return data.candidates?.[0]?.content?.parts?.[0]?.text || "";
-}
-
-async function callLovable(apiKey: string, userPrompt: string) {
-  const resp = await fetch(LOVABLE_URL, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      model: "google/gemini-2.5-flash",
-      messages: [
-        { role: "system", content: ROADMAP_PROMPT },
-        { role: "user", content: userPrompt },
-      ],
-      temperature: 0.6,
-      max_tokens: 2000,
-    }),
-  });
-
-  if (!resp.ok) throw new Error(`Lovable AI error: ${resp.status}`);
-  const data = await resp.json();
-  return data.choices?.[0]?.message?.content || "";
-}
-
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
@@ -96,8 +49,7 @@ serve(async (req) => {
     const authHeader = req.headers.get("Authorization");
     if (!authHeader?.startsWith("Bearer ")) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
@@ -110,8 +62,7 @@ serve(async (req) => {
     const { data: { user: authUser }, error: userError } = await supabase.auth.getUser();
     if (userError || !authUser) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
@@ -124,24 +75,30 @@ serve(async (req) => {
 
 Generate a comprehensive roadmap with milestones, KPIs, resources, and risk analysis.`;
 
-    const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+    if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
 
-    let content: string;
-    try {
-      if (GEMINI_API_KEY) {
-        console.log("Using Gemini Plus as primary AI");
-        content = await callGemini(GEMINI_API_KEY, userPrompt);
-      } else {
-        throw new Error("No Gemini key");
-      }
-    } catch (e) {
-      console.log("Gemini failed, falling back to Lovable AI:", e);
-      if (!LOVABLE_API_KEY) throw new Error("No AI keys configured");
-      content = await callLovable(LOVABLE_API_KEY, userPrompt);
-    }
+    const resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${LOVABLE_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "google/gemini-3-flash-preview",
+        messages: [
+          { role: "system", content: ROADMAP_PROMPT },
+          { role: "user", content: userPrompt },
+        ],
+        temperature: 0.6,
+        max_tokens: 2000,
+      }),
+    });
 
-    // Strip markdown code fences if present
+    if (!resp.ok) throw new Error(`AI gateway error: ${resp.status}`);
+    const data = await resp.json();
+    let content = data.choices?.[0]?.message?.content || "";
+
     content = content.replace(/^```json?\s*/i, "").replace(/```\s*$/i, "").trim();
 
     let roadmapContent;
@@ -150,12 +107,10 @@ Generate a comprehensive roadmap with milestones, KPIs, resources, and risk anal
     } catch {
       console.error("Failed to parse roadmap JSON:", content);
       return new Response(JSON.stringify({ error: "Failed to parse AI response" }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    // Save to database
     const { data: roadmap, error: dbError } = await supabase
       .from("roadmaps")
       .upsert({ goal_id, content: roadmapContent }, { onConflict: "goal_id" })
@@ -165,8 +120,7 @@ Generate a comprehensive roadmap with milestones, KPIs, resources, and risk anal
     if (dbError) {
       console.error("DB error:", dbError);
       return new Response(JSON.stringify({ error: "Failed to save roadmap" }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
@@ -176,8 +130,7 @@ Generate a comprehensive roadmap with milestones, KPIs, resources, and risk anal
   } catch (e) {
     console.error("generate-roadmap error:", e);
     return new Response(JSON.stringify({ error: e instanceof Error ? e.message : "Unknown error" }), {
-      status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
 });
