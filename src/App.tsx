@@ -34,6 +34,7 @@ const App = () => (
             <Route path="/schedule" element={<ProtectedRoute><Schedule /></ProtectedRoute>} />
             <Route path="/prompts" element={<ProtectedRoute><PromptVault /></ProtectedRoute>} />
             <Route path="/career" element={<ProtectedRoute><Career /></ProtectedRoute>} />
+            <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>

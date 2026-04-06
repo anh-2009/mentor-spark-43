@@ -11,6 +11,7 @@ const NAV_ITEMS = [
   { path: "/schedule", icon: CalendarDays, label: "Schedule" },
   { path: "/career", icon: Briefcase, label: "Career" },
   { path: "/prompts", icon: BookOpen, label: "Prompts" },
+  { path: "/profile", icon: UserCircle, label: "Profile" },
 ];
 
 export default function Navbar() {
