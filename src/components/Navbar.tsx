@@ -1,6 +1,7 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { Brain, MessageSquare, Map, CalendarDays, LayoutDashboard, LogOut, Menu, X, BookOpen, Briefcase, UserCircle } from "lucide-react";
+import { useTheme } from "@/hooks/useTheme";
+import { Brain, MessageSquare, Map, CalendarDays, LayoutDashboard, LogOut, Menu, X, BookOpen, Briefcase, UserCircle, Sun, Moon } from "lucide-react";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -16,6 +17,7 @@ const NAV_ITEMS = [
 
 export default function Navbar() {
   const { signOut } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   const location = useLocation();
   const navigate = useNavigate();
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -64,8 +66,25 @@ export default function Navbar() {
             );
           })}
           <button
+            onClick={toggleTheme}
+            className="ml-2 flex items-center justify-center w-9 h-9 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/30 transition-all"
+            aria-label="Toggle theme"
+          >
+            <AnimatePresence mode="wait" initial={false}>
+              <motion.div
+                key={theme}
+                initial={{ rotate: -90, opacity: 0, scale: 0.5 }}
+                animate={{ rotate: 0, opacity: 1, scale: 1 }}
+                exit={{ rotate: 90, opacity: 0, scale: 0.5 }}
+                transition={{ duration: 0.15 }}
+              >
+                {theme === "dark" ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+              </motion.div>
+            </AnimatePresence>
+          </button>
+          <button
             onClick={() => { signOut(); navigate("/"); }}
-            className="ml-3 flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all"
+            className="ml-1 flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all"
           >
             <LogOut className="w-4 h-4" />
           </button>
@@ -102,6 +121,13 @@ export default function Navbar() {
                   {label}
                 </Link>
               ))}
+              <button
+                onClick={toggleTheme}
+                className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-muted-foreground hover:text-foreground hover:bg-muted/30 w-full"
+              >
+                {theme === "dark" ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+                {theme === "dark" ? "Light Mode" : "Dark Mode"}
+              </button>
               <button
                 onClick={() => { signOut(); navigate("/"); setMobileOpen(false); }}
                 className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-muted-foreground hover:text-destructive w-full"
