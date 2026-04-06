@@ -13,6 +13,7 @@ import Roadmap from "./pages/Roadmap";
 import Schedule from "./pages/Schedule";
 import PromptVault from "./pages/PromptVault";
 import Career from "./pages/Career";
+import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -33,6 +34,7 @@ const App = () => (
             <Route path="/schedule" element={<ProtectedRoute><Schedule /></ProtectedRoute>} />
             <Route path="/prompts" element={<ProtectedRoute><PromptVault /></ProtectedRoute>} />
             <Route path="/career" element={<ProtectedRoute><Career /></ProtectedRoute>} />
+            <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>
