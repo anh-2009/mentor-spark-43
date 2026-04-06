@@ -122,6 +122,13 @@ export default function Navbar() {
                 </Link>
               ))}
               <button
+                onClick={toggleTheme}
+                className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-muted-foreground hover:text-foreground hover:bg-muted/30 w-full"
+              >
+                {theme === "dark" ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+                {theme === "dark" ? "Light Mode" : "Dark Mode"}
+              </button>
+              <button
                 onClick={() => { signOut(); navigate("/"); setMobileOpen(false); }}
                 className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-muted-foreground hover:text-destructive w-full"
               >
