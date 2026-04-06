@@ -13,6 +13,7 @@ import Roadmap from "./pages/Roadmap";
 import Schedule from "./pages/Schedule";
 import PromptVault from "./pages/PromptVault";
 import Career from "./pages/Career";
+import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
