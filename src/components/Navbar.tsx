@@ -1,7 +1,7 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/hooks/useTheme";
-import { Brain, MessageSquare, Map, CalendarDays, LayoutDashboard, LogOut, Menu, X, BookOpen, Briefcase, UserCircle, Sun, Moon } from "lucide-react";
+import { Brain, MessageSquare, Map, CalendarDays, LayoutDashboard, LogOut, Menu, X, BookOpen, Briefcase, UserCircle, Sun, Moon, StickyNote } from "lucide-react";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -12,6 +12,7 @@ const NAV_ITEMS = [
   { path: "/schedule", icon: CalendarDays, label: "Schedule" },
   { path: "/career", icon: Briefcase, label: "Career" },
   { path: "/prompts", icon: BookOpen, label: "Prompts" },
+  { path: "/notes", icon: StickyNote, label: "Notes" },
   { path: "/profile", icon: UserCircle, label: "Profile" },
 ];
 
