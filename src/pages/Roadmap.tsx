@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useUserLanguage } from "@/hooks/useUserLanguage";
 import Navbar from "@/components/Navbar";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -38,6 +39,7 @@ interface RoadmapContent {
 export default function Roadmap() {
   const { user, session } = useAuth();
   const queryClient = useQueryClient();
+  const { language } = useUserLanguage();
   const [showForm, setShowForm] = useState(false);
   const [skill, setSkill] = useState("");
   const [level, setLevel] = useState("beginner");
@@ -96,6 +98,7 @@ export default function Roadmap() {
             level: goalLevel,
             duration_weeks: goalWeeks,
             goal_id: goalId,
+            language,
           }),
         }
       );

@@ -8,6 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useUserLanguage } from "@/hooks/useUserLanguage";
 import Navbar from "@/components/Navbar";
 
 interface CareerResult {
@@ -55,6 +56,7 @@ export default function Career() {
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { language } = useUserLanguage();
   const [skills, setSkills] = useState<string[]>([]);
   const [interests, setInterests] = useState<string[]>([]);
   const [experienceLevel, setExperienceLevel] = useState("student");
@@ -106,7 +108,7 @@ export default function Career() {
           "Content-Type": "application/json",
           Authorization: `Bearer ${session?.access_token}`,
         },
-        body: JSON.stringify({ skills, interests, experience_level: experienceLevel }),
+        body: JSON.stringify({ skills, interests, experience_level: experienceLevel, language }),
       });
 
       if (!resp.ok) {
