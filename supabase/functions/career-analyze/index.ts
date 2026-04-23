@@ -33,13 +33,23 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const { skills, interests, experience_level } = await req.json();
+    const { skills, interests, experience_level, language } = await req.json();
+
+    const LANGUAGE_NAMES: Record<string, string> = {
+      vi: "Vietnamese (Tiếng Việt)",
+      en: "English",
+      ja: "Japanese (日本語)",
+      ko: "Korean (한국어)",
+    };
+    const languageName = LANGUAGE_NAMES[language] ?? "Vietnamese (Tiếng Việt)";
 
     const userPrompt = `Analyze my profile and suggest career paths:
 
 Skills: ${skills.join(", ")}
 Interests: ${interests.join(", ")}
 Experience Level: ${experience_level}
+
+IMPORTANT: All textual fields in the JSON response (title, description, why_fit, key_skills, growth_outlook, salary_range, next_steps, skill_gaps, summary) MUST be written in ${languageName}. Keep the JSON keys in English but write all values in ${languageName}.
 
 Please provide career recommendations in JSON format.`;
 

@@ -66,12 +66,22 @@ serve(async (req) => {
       });
     }
 
-    const { skill, level, duration_weeks, goal_id } = await req.json();
+    const { skill, level, duration_weeks, goal_id, language } = await req.json();
+
+    const LANGUAGE_NAMES: Record<string, string> = {
+      vi: "Vietnamese (Tiếng Việt)",
+      en: "English",
+      ja: "Japanese (日本語)",
+      ko: "Korean (한국어)",
+    };
+    const languageName = LANGUAGE_NAMES[language] ?? "Vietnamese (Tiếng Việt)";
 
     const userPrompt = `Create a detailed study roadmap for:
 - Skill: ${skill}
 - Level: ${level}
 - Duration: ${duration_weeks} weeks
+
+IMPORTANT: All textual fields in the JSON response (goal, outcome, milestone titles & descriptions, kpis, resources, tasks, risks, mitigations, difficulty) MUST be written in ${languageName}. Keep the JSON keys in English but write all values in ${languageName}.
 
 Generate a comprehensive roadmap with milestones, KPIs, resources, and risk analysis.`;
 

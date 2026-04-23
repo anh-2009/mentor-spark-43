@@ -46,9 +46,19 @@ serve(async (req) => {
       });
     }
 
-    const { messages, sentiment, systemPrompt } = await req.json();
+    const { messages, sentiment, systemPrompt, language } = await req.json();
+
+    const LANGUAGE_NAMES: Record<string, string> = {
+      vi: "Vietnamese (Tiếng Việt)",
+      en: "English",
+      ja: "Japanese (日本語)",
+      ko: "Korean (한국어)",
+    };
+    const languageName = LANGUAGE_NAMES[language] ?? "Vietnamese (Tiếng Việt)";
 
     let enhancedPrompt = systemPrompt || SYSTEM_PROMPT;
+    enhancedPrompt += `\n\nIMPORTANT: The user's preferred language is ${languageName}. You MUST respond ONLY in ${languageName}, regardless of which language the user writes in. All explanations, headers, lists, and content must be in ${languageName}.`;
+
     if (!systemPrompt) {
       if (sentiment === "stressed") enhancedPrompt += "\n\nThe student is currently feeling stressed. Be extra supportive and encouraging.";
       else if (sentiment === "overwhelmed") enhancedPrompt += "\n\nThe student feels overwhelmed. Focus on simplifying and prioritizing.";
