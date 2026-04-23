@@ -7,6 +7,7 @@ export async function streamChat({
   sentiment,
   token,
   systemPrompt,
+  language,
   onDelta,
   onDone,
   onError,
@@ -15,6 +16,7 @@ export async function streamChat({
   sentiment: string;
   token: string;
   systemPrompt?: string;
+  language?: string;
   onDelta: (deltaText: string) => void;
   onDone: () => void;
   onError: (error: string) => void;
@@ -25,7 +27,7 @@ export async function streamChat({
       "Content-Type": "application/json",
       Authorization: `Bearer ${token}`,
     },
-    body: JSON.stringify({ messages, sentiment, systemPrompt }),
+    body: JSON.stringify({ messages, sentiment, systemPrompt, language }),
   });
 
   if (!resp.ok || !resp.body) {
