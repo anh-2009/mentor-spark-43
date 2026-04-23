@@ -14,11 +14,13 @@ import { useConversations } from "@/hooks/useConversations";
 import { toast } from "sonner";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useQueryClient } from "@tanstack/react-query";
+import { useUserLanguage } from "@/hooks/useUserLanguage";
 
 export default function Chat() {
   const { user, session } = useAuth();
   const isMobile = useIsMobile();
   const queryClient = useQueryClient();
+  const { language } = useUserLanguage();
   const [mobileSidebar, setMobileSidebar] = useState(false);
   const {
     conversations,
@@ -278,6 +280,7 @@ export default function Chat() {
         sentiment,
         token: session.access_token,
         systemPrompt: systemContext,
+        language,
         onDelta: upsertAssistant,
         onDone: async () => {
           setIsLoading(false);
