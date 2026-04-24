@@ -104,7 +104,7 @@ export default function PromptVault() {
     <div className="min-h-screen bg-background flex flex-col">
       <div className="gradient-mesh fixed inset-0 pointer-events-none" />
       <Navbar />
-      <main className="flex-1 pt-20 pb-8 px-4 md:px-8 max-w-6xl mx-auto w-full relative z-10">
+      <main id="main-content" tabIndex={-1} className="flex-1 pt-20 pb-8 px-4 md:px-8 max-w-6xl mx-auto w-full relative z-10">
         {/* Header */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
           <div>

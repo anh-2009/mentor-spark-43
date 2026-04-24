@@ -72,7 +72,7 @@ export default function Dashboard() {
     <div className="min-h-screen bg-background">
       <div className="gradient-mesh fixed inset-0 pointer-events-none" />
       <Navbar />
-      <main className="relative z-10 pt-20 pb-8 px-4 md:px-6 max-w-6xl mx-auto">
+      <main id="main-content" tabIndex={-1} className="relative z-10 pt-20 pb-8 px-4 md:px-6 max-w-6xl mx-auto">
         {/* Welcome */}
         <motion.div
           initial={{ opacity: 0, y: 10 }}
