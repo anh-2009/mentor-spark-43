@@ -12,14 +12,27 @@ export default function ChatHeader({ conversation, onClear, onToggleSidebar, sho
   const isMaster = conversation?.conversation_type === "master";
 
   return (
-    <div className="px-4 py-3 flex items-center justify-between border-b border-border/50">
+    <div
+      className="px-4 py-3 flex items-center justify-between border-b border-border/50"
+      role="region"
+      aria-label="Conversation header"
+    >
       <div className="flex items-center gap-2">
         {showMenuButton && (
-          <button onClick={onToggleSidebar} className="p-2 rounded-lg hover:bg-muted/50 text-muted-foreground mr-1 md:hidden">
-            <Menu className="w-4 h-4" />
+          <button
+            onClick={onToggleSidebar}
+            type="button"
+            aria-label="Toggle conversations sidebar"
+            title="Toggle conversations"
+            className="p-2 rounded-lg hover:bg-muted/50 text-muted-foreground mr-1 md:hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
+          >
+            <Menu className="w-4 h-4" aria-hidden="true" />
           </button>
         )}
-        <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${isMaster ? "bg-secondary/10" : "bg-primary/10"}`}>
+        <div
+          className={`w-8 h-8 rounded-lg flex items-center justify-center ${isMaster ? "bg-secondary/10" : "bg-primary/10"}`}
+          aria-hidden="true"
+        >
           {isMaster ? <Crown className="w-4 h-4 text-secondary" /> : <Bot className="w-4 h-4 text-primary" />}
         </div>
         <div>
@@ -33,9 +46,12 @@ export default function ChatHeader({ conversation, onClear, onToggleSidebar, sho
       </div>
       <button
         onClick={onClear}
-        className="p-2 rounded-lg hover:bg-muted/50 text-muted-foreground hover:text-destructive transition-all"
+        type="button"
+        aria-label="Clear conversation messages"
+        title="Clear conversation"
+        className="p-2 rounded-lg hover:bg-muted/50 text-muted-foreground hover:text-destructive transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive/40"
       >
-        <Trash2 className="w-4 h-4" />
+        <Trash2 className="w-4 h-4" aria-hidden="true" />
       </button>
     </div>
   );

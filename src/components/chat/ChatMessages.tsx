@@ -79,48 +79,66 @@ export default function ChatMessages({ messages, isLoading, loadingHistory, isMa
         ref={containerRef}
         onScroll={handleScroll}
         className="absolute inset-0 overflow-y-auto scrollbar-thin p-4 space-y-4"
+        role="log"
+        aria-live="polite"
+        aria-relevant="additions text"
+        aria-label="Conversation messages"
+        tabIndex={0}
       >
-        {messages.map((msg, i) => (
-          <motion.div
-            key={i}
-            initial={{ opacity: 0, y: 5 }}
-            animate={{ opacity: 1, y: 0 }}
-            className={`flex gap-3 ${msg.role === "user" ? "justify-end" : ""}`}
-          >
-            {msg.role === "assistant" && (
-              <div className={`w-7 h-7 rounded-lg flex-shrink-0 flex items-center justify-center mt-1 ${isMaster ? "bg-secondary/10" : "bg-primary/10"}`}>
-                {isMaster ? <Crown className="w-3.5 h-3.5 text-secondary" /> : <Bot className="w-3.5 h-3.5 text-primary" />}
-              </div>
-            )}
-            <div
-              className={`max-w-[80%] rounded-2xl px-4 py-3 text-sm ${
-                msg.role === "user"
-                  ? "bg-primary text-primary-foreground rounded-br-md"
-                  : "glass rounded-bl-md"
-              }`}
+        {messages.map((msg, i) => {
+          const authorLabel = msg.role === "user" ? "You" : isMaster ? "Master AI" : "AI assistant";
+          return (
+            <motion.div
+              key={i}
+              initial={{ opacity: 0, y: 5 }}
+              animate={{ opacity: 1, y: 0 }}
+              className={`flex gap-3 ${msg.role === "user" ? "justify-end" : ""}`}
+              role="article"
+              aria-label={`${authorLabel} message`}
             >
-              {msg.role === "assistant" ? (
-                <div className="prose prose-sm prose-invert max-w-none [&_p]:mb-2 [&_ul]:mb-2 [&_ol]:mb-2 [&_h1]:text-base [&_h2]:text-sm [&_h3]:text-sm">
-                  <ReactMarkdown>{msg.content}</ReactMarkdown>
+              {msg.role === "assistant" && (
+                <div
+                  className={`w-7 h-7 rounded-lg flex-shrink-0 flex items-center justify-center mt-1 ${isMaster ? "bg-secondary/10" : "bg-primary/10"}`}
+                  aria-hidden="true"
+                >
+                  {isMaster ? <Crown className="w-3.5 h-3.5 text-secondary" /> : <Bot className="w-3.5 h-3.5 text-primary" />}
                 </div>
-              ) : (
-                <p className="whitespace-pre-wrap">{msg.content}</p>
               )}
-            </div>
-            {msg.role === "user" && (
-              <div className="w-7 h-7 rounded-lg bg-secondary/10 flex-shrink-0 flex items-center justify-center mt-1">
-                <User className="w-3.5 h-3.5 text-secondary" />
+              <div
+                className={`max-w-[80%] rounded-2xl px-4 py-3 text-sm ${
+                  msg.role === "user"
+                    ? "bg-primary text-primary-foreground rounded-br-md"
+                    : "glass rounded-bl-md"
+                }`}
+              >
+                <span className="sr-only">{authorLabel} said: </span>
+                {msg.role === "assistant" ? (
+                  <div className="prose prose-sm prose-invert max-w-none [&_p]:mb-2 [&_ul]:mb-2 [&_ol]:mb-2 [&_h1]:text-base [&_h2]:text-sm [&_h3]:text-sm">
+                    <ReactMarkdown>{msg.content}</ReactMarkdown>
+                  </div>
+                ) : (
+                  <p className="whitespace-pre-wrap">{msg.content}</p>
+                )}
               </div>
-            )}
-          </motion.div>
-        ))}
+              {msg.role === "user" && (
+                <div className="w-7 h-7 rounded-lg bg-secondary/10 flex-shrink-0 flex items-center justify-center mt-1" aria-hidden="true">
+                  <User className="w-3.5 h-3.5 text-secondary" />
+                </div>
+              )}
+            </motion.div>
+          );
+        })}
         {isLoading && messages[messages.length - 1]?.role !== "assistant" && (
-          <div className="flex gap-3">
-            <div className={`w-7 h-7 rounded-lg flex items-center justify-center ${isMaster ? "bg-secondary/10" : "bg-primary/10"}`}>
+          <div className="flex gap-3" role="status" aria-label="AI is typing">
+            <div
+              className={`w-7 h-7 rounded-lg flex items-center justify-center ${isMaster ? "bg-secondary/10" : "bg-primary/10"}`}
+              aria-hidden="true"
+            >
               {isMaster ? <Crown className="w-3.5 h-3.5 text-secondary" /> : <Bot className="w-3.5 h-3.5 text-primary" />}
             </div>
             <div className="glass rounded-2xl rounded-bl-md px-4 py-3">
-              <Loader2 className="w-4 h-4 animate-spin text-primary" />
+              <Loader2 className="w-4 h-4 animate-spin text-primary" aria-hidden="true" />
+              <span className="sr-only">Generating response…</span>
             </div>
           </div>
         )}
