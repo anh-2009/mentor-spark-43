@@ -41,14 +41,6 @@ export default function Navbar() {
   }, [mobileOpen]);
 
   return (
-    <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${scrolled ? "bg-background/80 backdrop-blur-xl border-b border-border/60 shadow-sm" : "bg-background/50 backdrop-blur-md border-b border-transparent"}`}>
-      <div className="max-w-7xl mx-auto px-4 md:px-6 h-16 flex items-center justify-between">
-        <Link to="/dashboard" className="flex items-center gap-2.5 group">
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary/15 to-primary/5 flex items-center justify-center group-hover:from-primary/25 group-hover:to-primary/10 transition-all border border-primary/10">
-            <Brain className="w-5 h-5 text-primary" />
-          </div>
-          <span className="font-display font-semibold text-[17px] text-foreground tracking-tight">NeuroPlan</span>
-        </Link>
 
     <nav
       aria-label="Primary"
