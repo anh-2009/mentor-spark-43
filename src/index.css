@@ -163,43 +163,62 @@
     @apply border-border;
   }
 
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
   body {
     @apply bg-background text-foreground font-sans antialiased;
     font-family: 'Inter', sans-serif;
+    font-feature-settings: 'cv11', 'ss01', 'ss03';
+    letter-spacing: -0.005em;
+    line-height: 1.55;
   }
 
   h1, h2, h3, h4, h5, h6 {
     font-family: 'Space Grotesk', sans-serif;
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+  }
+
+  h1 { letter-spacing: -0.03em; }
+
+  /* Selection */
+  ::selection {
+    background: hsl(var(--primary) / 0.18);
+    color: hsl(var(--foreground));
   }
 
   /* Focus ring - accessibility */
   :focus-visible {
-    @apply outline-none ring-2 ring-primary/60 ring-offset-2 ring-offset-background;
+    @apply outline-none ring-2 ring-primary/50 ring-offset-2 ring-offset-background;
   }
 }
 
 @layer utilities {
-  /* ===== Glass system ===== */
+  /* ===== Glass system — softer, less frosted ===== */
   .glass {
-    @apply bg-card/60 backdrop-blur-xl border border-glass-border rounded-xl;
+    @apply bg-card/70 backdrop-blur-xl border border-glass-border rounded-2xl;
     box-shadow: var(--shadow-sm);
   }
 
   .glass-strong {
-    @apply bg-card/80 backdrop-blur-2xl border border-glass-border rounded-xl;
+    @apply bg-card/85 backdrop-blur-2xl border border-glass-border rounded-2xl;
     box-shadow: var(--shadow-md);
   }
 
   .glass-hover {
-    @apply bg-card/60 backdrop-blur-xl border border-glass-border rounded-xl 
-           transition-all hover:border-primary/30 hover:bg-card/80;
+    @apply bg-card/70 backdrop-blur-xl border border-glass-border rounded-2xl
+           transition-all hover:border-primary/25 hover:bg-card/90;
     box-shadow: var(--shadow-sm);
     transition-duration: var(--duration-slow);
   }
 
   .glass-hover:hover {
-    box-shadow: var(--shadow-md), 0 0 30px hsl(var(--primary) / 0.06);
-    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+    transform: translateY(-1px);
   }
 
   /* ===== Gradient text ===== */
