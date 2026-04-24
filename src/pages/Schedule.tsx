@@ -201,7 +201,7 @@ export default function Schedule() {
     <div className="min-h-screen bg-background">
       <div className="gradient-mesh fixed inset-0 pointer-events-none" />
       <Navbar />
-      <main className="relative z-10 pt-20 pb-8 px-4 max-w-4xl mx-auto">
+      <main id="main-content" tabIndex={-1} className="relative z-10 pt-20 pb-8 px-4 max-w-4xl mx-auto">
         <div className="flex items-center justify-between mb-6">
           <div>
             <h1 className="font-display text-2xl font-bold text-foreground flex items-center gap-2">

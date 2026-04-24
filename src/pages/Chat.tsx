@@ -333,7 +333,7 @@ export default function Chat() {
     <div className="min-h-screen bg-background flex flex-col">
       <div className="gradient-mesh fixed inset-0 pointer-events-none" />
       <Navbar />
-      <main className="flex-1 flex pt-16 relative z-10">
+      <main id="main-content" tabIndex={-1} className="flex-1 flex pt-16 relative z-10">
         {/* Sidebar - desktop always, mobile overlay */}
         <div className={`${isMobile ? "absolute inset-y-0 left-0 z-30 pt-16" : ""} ${isMobile && !mobileSidebar ? "hidden" : ""}`}>
           <ChatSidebar

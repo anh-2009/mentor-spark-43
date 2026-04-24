@@ -182,7 +182,7 @@ export default function Career() {
     <div className="min-h-screen bg-background">
       <div className="gradient-mesh fixed inset-0 pointer-events-none" />
       <Navbar />
-      <main className="relative z-10 pt-20 pb-8 px-4 md:px-6 max-w-5xl mx-auto">
+      <main id="main-content" tabIndex={-1} className="relative z-10 pt-20 pb-8 px-4 md:px-6 max-w-5xl mx-auto">
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mb-8">
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-3">
